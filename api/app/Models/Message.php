@@ -1,0 +1,20 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Message extends Model
+{
+    use HasFactory;
+
+    /**
+     * @var string[]
+     */
+    protected $fillable = [
+        'body',
+        'meeting_id',
+        'user_id',
+    ];
+}
