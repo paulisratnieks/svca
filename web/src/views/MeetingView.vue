@@ -1,35 +1,27 @@
 <script setup lang="ts">
 import {computed, onMounted, ref, type Ref} from 'vue';
 import {useRoute} from 'vue-router';
+import type {Message} from '@/types/message';
 
 const route = useRoute();
 
 const messageBody: Ref<string> = ref('');
-
 const meetingId: Ref<string> = computed((): string => {
 	return route.params.meetingId as string;
 });
 
 onMounted((): void => {
-	window.axios.get('https://' + import.meta.env.VITE_API_HOST + '/meetings/' + meetingId.value)
-		.then((): void => {
-		});
-
 	window.Echo.private(`meetings.${meetingId.value}`)
-		.listen('MessageCreated', (e): void => {
-			console.log(e);
+		.listen('MessageCreated', (event: Message): void => {
+			console.log(event);
 		});
 });
 
 function onCreateMessageClick(): void {
-	window.axios.post('https://' + import.meta.env.VITE_API_HOST + '/meetings/' + meetingId.value + '/messages',
-		{
-			body: messageBody.value,
-			user_id: 1
-		}
-	).then((res: any): void => {
-		console.log(res);
-		});
+	window.axios.post(
+		import.meta.env.VITE_API_URL + '/meetings/' + meetingId.value + '/messages',
+		{body: messageBody.value, user_id: 1}
+	);
 }
 
 </script>
