@@ -6,13 +6,13 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        api: __DIR__.'/../routes/api.php',
-        channels: __DIR__.'/../routes/channels.php',
+        api: __DIR__ . '/../routes/api.php',
+        channels: __DIR__ . '/../routes/channels.php',
         health: '/up',
         apiPrefix: '',
     )
     ->withBroadcasting(
-        __DIR__.'/../routes/channels.php',
+        __DIR__ . '/../routes/channels.php',
         ['prefix' => '', 'middleware' => ['api', 'auth:sanctum']],
     )
     ->withMiddleware(function (Middleware $middleware) {

@@ -11,11 +11,11 @@ use Illuminate\Queue\SerializesModels;
 
 class MessageCreated implements ShouldBroadcastNow
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
-    public function __construct(private readonly Message $message)
-    {
-    }
+    public function __construct(private readonly Message $message) {}
 
     /**
      * @return array<string, string|int>

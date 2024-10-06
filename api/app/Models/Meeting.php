@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Meeting extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory;
+    use HasUuids;
 
     /**
      * @var string[]
