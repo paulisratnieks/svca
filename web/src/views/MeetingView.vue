@@ -27,8 +27,8 @@ function onCreateMessageClick(): void {
 </script>
 
 <template>
-  <main>
-	  <input v-model="messageBody">
-	  <button @click="onCreateMessageClick">Create message</button>
-  </main>
+	<main>
+		<input v-model="messageBody">
+		<button @click="onCreateMessageClick">Create message</button>
+	</main>
 </template>

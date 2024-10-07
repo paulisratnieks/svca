@@ -4,7 +4,7 @@ import type {AxiosResponse} from 'axios';
 
 function onCreateMeetingButtonClick(): void {
 	window.axios.post(import.meta.env.VITE_API_URL + '/meetings', {user_id: 1})
-		.then((response: AxiosResponse<{id: string}>): void => {
+		.then((response: AxiosResponse<{ id: string }>): void => {
 			const id = response.data.id;
 			router.push({path: '/meetings/' + id});
 		});
@@ -12,9 +12,10 @@ function onCreateMeetingButtonClick(): void {
 </script>
 
 <template>
-  <main>
-	  <button
-		  @click="onCreateMeetingButtonClick"
-	  >Create meeting</button>
-  </main>
+	<main>
+		<button
+			@click="onCreateMeetingButtonClick"
+		>Create meeting
+		</button>
+	</main>
 </template>
