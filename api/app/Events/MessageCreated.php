@@ -3,6 +3,7 @@
 namespace App\Events;
 
 use App\Models\Message;
+use Carbon\Carbon;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -11,14 +12,14 @@ use Illuminate\Queue\SerializesModels;
 
 class MessageCreated implements ShouldBroadcastNow
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
-    public function __construct(private readonly Message $message)
-    {
-    }
+    public function __construct(private readonly Message $message) {}
 
     /**
-     * @return array<string, string|int>
+     * @return array<string, Carbon|string|int|null>
      */
     public function broadcastWith(): array
     {
