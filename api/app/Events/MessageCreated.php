@@ -5,7 +5,7 @@ namespace App\Events;
 use App\Models\Message;
 use Carbon\Carbon;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -27,8 +27,8 @@ class MessageCreated implements ShouldBroadcastNow
     }
 
 
-    public function broadcastOn(): PrivateChannel
+    public function broadcastOn(): PresenceChannel
     {
-        return new PrivateChannel('meetings.' . $this->message->meeting_id);
+        return new PresenceChannel('meetings.' . $this->message->meeting_id);
     }
 }
