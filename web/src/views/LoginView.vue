@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import {type Ref, ref} from 'vue';
 import type {AxiosResponse} from 'axios';
+import router from '@/router';
+import {useCurrentUserStore} from '@/stores/current-user';
 
 const email: Ref<string> = ref('');
 const password: Ref<string> = ref('');
+const currentUser = useCurrentUserStore();
 
 function onLoginButtonClick(): void {
 	window.axios.get(import.meta.env.VITE_API_URL + '/sanctum/csrf-cookie')
@@ -13,8 +16,13 @@ function onLoginButtonClick(): void {
 				{email: email.value, password: password.value}
 			);
 		})
-		.then((response: AxiosResponse<{ message: string }>): void => {
+		.then((response: AxiosResponse<{ message: string }>): Promise<void> => {
 			console.log(response.data.message);
+
+			return currentUser.fetch();
+		})
+		.then((): void => {
+			router.push({path: '/'})
 		});
 }
 </script>
