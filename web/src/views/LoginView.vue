@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import {type Ref, ref} from 'vue';
 import type {AxiosResponse} from 'axios';
+import {useCurrentUserStore} from '@/stores/current-user';
+import router from '@/router';
+
+const currentUser = useCurrentUserStore();
 
 const email: Ref<string> = ref('');
 const password: Ref<string> = ref('');
@@ -13,8 +17,13 @@ function onLoginButtonClick(): void {
 				{email: email.value, password: password.value}
 			);
 		})
-		.then((response: AxiosResponse<{ message: string }>): void => {
+		.then((response: AxiosResponse<{ message: string }>): Promise<void> => {
 			console.log(response.data.message);
+
+			return currentUser.fetch();
+		})
+		.then((): void => {
+			router.push({path: '/'})
 		});
 }
 </script>

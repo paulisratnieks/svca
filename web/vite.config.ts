@@ -13,8 +13,4 @@ export default defineConfig({
 			'@': fileURLToPath(new URL('./src', import.meta.url))
 		}
 	},
-	server: {
-		host: 'web.svca.local',
-        port: 5173,
-	}
 })
