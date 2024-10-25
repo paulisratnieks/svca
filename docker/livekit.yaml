@@ -1,0 +1,12 @@
+port: 7880
+bind_addresses:
+  - ""
+
+redis:
+  address: 127.0.0.1:6379
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 60000
+keys:
+  APITBuQfm2HmKC4: WUugijVUsaw9IMvxZK3yOiR8inmQ1KYXhMqRtNN34fK
