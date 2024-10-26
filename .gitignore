@@ -1,2 +1,3 @@
 /.idea
 /docker/web/certs/*
+/docker/livekit/livekit.yaml
