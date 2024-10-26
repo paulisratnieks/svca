@@ -12,21 +12,28 @@ services:
     restart: unless-stopped
     network_mode: "host"
     volumes:
-      - ./docker/livekit.yaml:/etc/livekit.yaml
+      - ./docker/livekit/livekit.yaml:/etc/livekit.yaml
   nginx:
     build:
       context: .
       dockerfile: docker/web/Dockerfile
     volumes:
-      - ./docker/default.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/web/default.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/web/certs/svca.local.pem:/etc/nginx/ssl/svca.local.pem
+      - ./docker/web/certs/svca.local-key.pem:/etc/nginx/ssl/svca.local-key.pem
+      - ./docker/web/certs/api.svca.local.pem:/etc/nginx/ssl/api.svca.local.pem
+      - ./docker/web/certs/api.svca.local-key.pem:/etc/nginx/ssl/api.svca.local-key.pem
+      - ./docker/web/certs/livekit.svca.local.pem:/etc/nginx/ssl/livekit.svca.local.pem
+      - ./docker/web/certs/livekit.svca.local-key.pem:/etc/nginx/ssl/livekit.svca.local-key.pem
     restart: always
     ports:
-      - 8080:80
+      - 80:80
     network_mode: "host"
   php:
-    image: serversideup/php:8.3-fpm
-    volumes:
-      - ./api:/var/www/html
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    network_mode: "host"
   mysql:
     image: mysql/mysql-server:8.0
     ports:
@@ -40,6 +47,7 @@ services:
       MYSQL_ALLOW_EMPTY_PASSWORD: 1
     volumes:
       - mysql_data:/var/lib/mysql
+    network_mode: "host"
 
 volumes:
   redis_data:
