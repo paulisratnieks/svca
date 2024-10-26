@@ -1,8 +1,8 @@
 FROM serversideup/php:8.3-fpm
 
-COPY ./api /var/www/html
-
 USER root
+
+COPY --chown=www-data:www-data ./api /var/www/html
 
 RUN composer install
 
