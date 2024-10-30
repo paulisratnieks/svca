@@ -11,9 +11,13 @@ import FloatLabel from 'primevue/floatlabel';
 import {useToast} from 'primevue/usetoast';
 
 const currentUser = useCurrentUserStore();
-const toast  = useToast();
+const toast = useToast();
 
 const form: Record<string, { value: string, error?: string }> = reactive({
+	name: {
+		value: '',
+		error: '',
+	},
 	email: {
 		value: '',
 		error: '',
@@ -21,10 +25,10 @@ const form: Record<string, { value: string, error?: string }> = reactive({
 	password: {
 		value: '',
 		error: '',
-	},
+	}
 });
 
-function loginRequestBody(): Record<string, string> {
+function registerRequestBody(): Record<string, string> {
 	return Object.keys(form).reduce((accumulator: Record<string, string>, field: string): Record<string, string> => {
 		accumulator[field] = form[field].value;
 
@@ -32,32 +36,37 @@ function loginRequestBody(): Record<string, string> {
 	}, {})
 }
 
-function onLoginButtonClick(): void {
+function onSignUpButtonClick(): void {
 	useAxios().get('sanctum/csrf-cookie')
-		.then((): Promise<AxiosResponse<{ message: string }>> => useAxios().post('login', loginRequestBody()))
+		.then((): Promise<AxiosResponse<{ message: string }>> => useAxios().post('register', registerRequestBody()))
 		.then((): Promise<void> => currentUser.fetch())
 		.then((): void => {
-			toast.add({ severity: 'success', summary: 'Login page', detail: 'Login successful', life: 3000 });
+			toast.add({ severity: 'success', summary: 'Signup page', detail: 'Signup successful', life: 3000 });
 			router.push({path: '/'})
 		})
-		.catch((response: AxiosError<{ errors?: Record<string, string[]>, message?: string }>): void => {
+		.catch((response: AxiosError<{ errors?: Record<string, string[]> }>): void => {
 			if (response.status === HttpStatusCode.UnprocessableEntity && response.response?.data.errors) {
 				Object.entries(response.response.data.errors).forEach(([field, errors]): void => {
 					form[field].error = errors[0];
 				});
-			} else if (response.status === HttpStatusCode.Unauthorized && response.response?.data.message) {
-				form.password.error = response.response?.data.message;
 			}
-		});
+		})
 }
 </script>
 
 <template>
 	<main>
 		<Card>
-			<template #title>Log In</template>
+			<template #title>Sign Up</template>
 			<template #content>
 				<div class="card-content">
+					<div class="form-field">
+						<FloatLabel variant="on">
+							<InputText id="name" v-model="form.name.value"></InputText>
+							<label for="name">Username</label>
+						</FloatLabel>
+						<small v-if="form.name.error">{{ form.name.error }}</small>
+					</div>
 					<div class="form-field">
 						<FloatLabel variant="on">
 							<InputText id="email" v-model="form.email.value" type="email"></InputText>
@@ -73,8 +82,8 @@ function onLoginButtonClick(): void {
 						<small v-if="form.password.error">{{ form.password.error }}</small>
 					</div>
 					<Button
-						:label="'Log in'"
-						@click="onLoginButtonClick">
+						:label="'Sign up'"
+						@click="onSignUpButtonClick">
 					</Button>
 				</div>
 			</template>

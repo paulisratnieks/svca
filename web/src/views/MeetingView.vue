@@ -10,6 +10,7 @@ import {
 	VideoPresets
 } from 'livekit-client';
 import {useCurrentUserStore} from '@/stores/current-user';
+import {useAxios} from '@/composables/axios';
 
 const route = useRoute();
 const currentUser = useCurrentUserStore();
@@ -34,7 +35,7 @@ const room = new Room({
 });
 
 onMounted(async (): Promise<void> => {
-	const response = await window.axios.get(import.meta.env.VITE_API_URL + '/token', {params: {room_name: meetingId.value}})
+	const response = await useAxios().get('token', {params: {room_name: meetingId.value}})
 	const token = response.data.data;
 
 	await room.connect(import.meta.env.VITE_LIVEKIT_API_URL, token);
@@ -123,10 +124,11 @@ async function onScreenShareClick(): Promise<void> {
 	<main>
 		<section class="users">
 			<video ref="video" autoplay playsinline></video>
-			<video v-for="(participant, index) in subscribedRemoteParticipants" ref="remoteVideos"
-				   :key="index"
-				   :data-id="participant"
-				   autoplay playsinline muted>
+			<video v-for="(participant, index) in subscribedRemoteParticipants"
+				ref="remoteVideos"
+				:key="index"
+				:data-id="participant"
+				autoplay playsinline muted>
 			</video>
 		</section>
 		<input v-model="messageBody">
@@ -134,3 +136,6 @@ async function onScreenShareClick(): Promise<void> {
 		<button @click="onScreenShareClick">Share screen</button>
 	</main>
 </template>
+
+<style lang="scss" scoped>
+</style>

@@ -1,0 +1,14 @@
+@use 'variables' as *;
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	font-weight: normal;
+}
+
+body {
+	font-family: Inter, 'Fira Sans', sans-serif;
+	font-size: $font-size-default;
+}
