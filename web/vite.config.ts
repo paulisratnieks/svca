@@ -11,6 +11,14 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			'@': fileURLToPath(new URL('./src', import.meta.url))
-		}
+		},
 	},
+	css: {
+		preprocessorOptions: {
+			scss: {
+				api: 'modern-compiler',
+				additionalData: `@use "@/assets/variables.scss" as *;`
+			}
+		},
+	}
 })
