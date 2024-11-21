@@ -45,7 +45,7 @@ class AuthenticationTest extends TestCase
             'name' => 'John Doe',
             'password' => 'password123',
         ])->assertCreated();
-        $this->assertModelExists(User::where('email', $email)->first());
+        $this->assertModelExists(User::where('email', $email)->firstOrFail());
     }
 
     public function test_user_cannot_register_with_invalid_credentials(): void
@@ -55,7 +55,7 @@ class AuthenticationTest extends TestCase
             'email' => 'test@example.com',
         ];
         User::factory()->create([
-            ...$userFields
+            ...$userFields,
         ]);
 
         $this->postJson('/register', [

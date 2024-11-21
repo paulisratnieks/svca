@@ -27,7 +27,7 @@ function onJoinMeetingButtonClick(): void {
 	showMeetingIdError.value = false;
 
 	useAxios().get('meetings/' + meetingId.value)
-		.then((response: any): void => {
+		.then((response: AxiosResponse): void => {
 			if (response.status === HttpStatusCode.NoContent) {
 				redirectToMeeting(meetingId.value)
 			}
@@ -40,7 +40,7 @@ function onJoinMeetingButtonClick(): void {
 }
 
 function redirectToMeeting(id: string): void {
-	router.push({path: '/meetings/' + id});
+	router.push({path: '/staging', query: {meetingId: id}});
 }
 </script>
 

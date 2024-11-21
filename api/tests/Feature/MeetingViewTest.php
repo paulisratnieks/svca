@@ -18,7 +18,7 @@ class MeetingViewTest extends TestCase
     {
         $user = User::factory()->create();
         Meeting::factory()->create([
-            'id' => '18539908-930c-37ca-800e-d2274e6d8e2b'
+            'id' => '18539908-930c-37ca-800e-d2274e6d8e2b',
         ]);
 
         $this->actingAs($user)

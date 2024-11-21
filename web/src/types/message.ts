@@ -1,5 +1,5 @@
-export interface Message {
-	user_id: number,
-	body: string,
-	created_at: string,
+import type {ChatMessage} from 'livekit-client';
+
+export type Message = Omit<ChatMessage, 'id'> & {
+	userId: number,
 }

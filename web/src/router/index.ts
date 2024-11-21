@@ -18,6 +18,10 @@ const router = createRouter({
       component: () => import('../views/RegisterView.vue')
     },
     {
+      path: '/staging',
+      component: () => import('../views/StagingView.vue')
+    },
+    {
       path: '/meetings/:meetingId',
       component: () => import('../views/MeetingView.vue')
     }

@@ -10,8 +10,8 @@ export function useAxios(): AxiosInstance {
 	});
 
 	axiosInstance.interceptors.response.use(
-		(response: AxiosResponse<any>) => response,
-		(error: AxiosResponse<any>) => {
+		(response: AxiosResponse<unknown>) => response,
+		(error: AxiosResponse<unknown>) => {
 			if (error.status === HttpStatusCode.Unauthorized || error.status === httpStatusCodeTokenMismatch) {
 				router.push({path: 'login'});
 			}
