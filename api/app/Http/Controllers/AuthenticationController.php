@@ -35,7 +35,7 @@ class AuthenticationController extends Controller
     {
         User::create([
             'email' => $request->validated('email'),
-            'password' => Hash::make($request->validated('password')),
+            'password' => Hash::make(stringify($request->validated('password'))),
             'name' => $request->validated('name'),
         ]);
 

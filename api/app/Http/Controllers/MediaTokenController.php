@@ -14,17 +14,21 @@ class MediaTokenController extends Controller
     /**
      * @throws Exception
      */
-    public function __invoke(MediaTokenRequest $request): JsonResponse
-    {
-        $tokenOptions = (new AccessTokenOptions())
+    public function __invoke(
+        MediaTokenRequest $request,
+        AccessTokenOptions $accessTokenOptions,
+        VideoGrant $videoGrant,
+        AccessToken $accessToken
+    ): JsonResponse {
+        $tokenOptions = $accessTokenOptions
             ->setIdentity((string) auth()->id());
 
-        $videoGrant = (new VideoGrant())
+        $videoGrant = $videoGrant
             ->setRoomJoin()
             ->setCanUpdateOwnMetadata()
-            ->setRoomName($request->get('room_name'));
+            ->setRoomName(stringify($request->get('room_name')));
 
-        $token = (new AccessToken(env('LIVEKIT_API_KEY'), env('LIVEKIT_API_SECRET')))
+        $token = $accessToken
             ->init($tokenOptions)
             ->setGrant($videoGrant)
             ->toJwt();
