@@ -28,6 +28,12 @@ import {useToast} from 'primevue/usetoast';
 import type {LocalUserWithTracks} from '@/types/local-user-with-tracks';
 import {TabNames} from '@/types/tab-names';
 import type {UserWithTracks} from '@/types/user-with-tracks';
+import MicrophoneIcon from '@/components/icons/MicrophoneIcon.vue';
+import CameraIcon from '@/components/icons/CameraIcon.vue';
+import ScreenShareIcon from '@/components/icons/ScreenShareIcon.vue';
+import RecordIcon from '@/components/icons/RecordIcon.vue';
+import ChatIcon from '@/components/icons/ChatIcon.vue';
+import UserIcon from '@/components/icons/UserIcon.vue';
 
 const route = useRoute();
 const toast = useToast();
@@ -45,6 +51,7 @@ const room = new Room({
 const messages: Ref<Message[]> = ref([]);
 const selectedTabId: Ref<TabNames> = ref(TabNames.Chat);
 const isSidebarVisible: Ref<boolean> = ref(false);
+const isRecording: Ref<boolean> = ref(false);
 
 const meetingId: Ref<string> = computed((): string => {
 	return route.params.meetingId as string;
@@ -319,7 +326,7 @@ async function updateMedia(kind: Track.Kind.Video|Track.Kind.Audio): Promise<voi
 }
 
 function onRecordControlClick(): void {
-
+	isRecording.value = !isRecording.value;
 }
 
 function onMessageControlClick(): void {
@@ -381,12 +388,24 @@ onMounted(async (): Promise<void> => {
 		</div>
 		<Toolbar class="controls">
 			<template #center>
-				<Button @click="onAudioControlClick" icon="pi pi-microphone" severity="secondary" rounded aria-label="Filter"/>
-				<Button @click="onCameraControlClick" icon="pi pi-camera" severity="secondary" rounded aria-label="Filter"/>
-				<Button @click="onRecordControlClick" icon="pi pi-video" severity="secondary" rounded aria-label="Filter"/>
-				<Button @click="onMessageControlClick" icon="pi pi-th-large" severity="secondary" rounded aria-label="Filter"/>
-				<Button @click="onParticipantControlClick" icon="pi pi-users" severity="secondary" rounded aria-label="Filter"/>
-				<Button @click="onScreenShareControlClick" icon="pi pi-desktop" severity="secondary" rounded aria-label="Filter"/>
+				<Button @click="onAudioControlClick" icon="pi pi-microphone" severity="secondary" rounded aria-label="Filter">
+					<template #icon><MicrophoneIcon :is-off="localParticipant.audioTrackMuted ?? false"></MicrophoneIcon></template>
+				</Button>
+				<Button @click="onCameraControlClick" icon="pi pi-camera" severity="secondary" rounded aria-label="Filter">
+					<template #icon><CameraIcon :is-off="localParticipant.videoTrackMuted ?? false"></CameraIcon></template>
+				</Button>
+				<Button @click="onMessageControlClick" icon="pi pi-th-large" severity="secondary" rounded aria-label="Filter">
+					<template #icon><ChatIcon /></template>
+				</Button>
+				<Button @click="onParticipantControlClick" icon="pi pi-users" severity="secondary" rounded aria-label="Filter">
+					<template #icon><UserIcon /></template>
+				</Button>
+				<Button @click="onScreenShareControlClick" icon="pi pi-desktop" severity="secondary" rounded aria-label="Filter">
+					<template #icon><ScreenShareIcon :is-off="localParticipant.screenVideoTrack === undefined"></ScreenShareIcon></template>
+				</Button>
+				<Button @click="onRecordControlClick" icon="pi pi-video" severity="secondary" rounded aria-label="Filter">
+					<template #icon><RecordIcon :is-off="!isRecording"></RecordIcon></template>
+				</Button>
 			</template>
 			<template #end>
 				<Button @click="onLeaveControlClick" severity="danger" label="Leave"/>
