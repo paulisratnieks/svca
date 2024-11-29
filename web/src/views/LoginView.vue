@@ -11,7 +11,7 @@ import FloatLabel from 'primevue/floatlabel';
 import {useToast} from 'primevue/usetoast';
 
 const currentUser = useCurrentUserStore();
-const toast  = useToast();
+const toast = useToast();
 
 const form: Record<string, { value: string, error?: string }> = reactive({
 	email: {

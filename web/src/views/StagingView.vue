@@ -2,14 +2,18 @@
 import ToggleSwitch from 'primevue/toggleswitch';
 import Panel from 'primevue/panel';
 import Button from 'primevue/button';
-import {computed, type ComputedRef, onMounted, reactive, ref, type Ref} from 'vue';
-import {createLocalTracks, LocalTrack, Track} from 'livekit-client';
+import {computed, nextTick, onMounted, ref, type Ref} from 'vue';
+import {createLocalAudioTrack, createLocalTracks, createLocalVideoTrack, LocalTrack, Track} from 'livekit-client';
 import router from '@/router';
 import {useCurrentUserStore} from '@/stores/current-user';
 import VideoWindow from '@/components/VideoWindow.vue';
 import {useRoute} from 'vue-router';
+import {useSettingsStore} from '@/stores/settings';
+import {useToast} from 'primevue/usetoast';
 
 const route = useRoute();
+const toast = useToast();
+const settings = useSettingsStore();
 const currentUser = useCurrentUserStore();
 
 const tracks: Ref<LocalTrack[]> = ref([]);
@@ -18,38 +22,41 @@ const meetingId: Ref<string> = computed((): string => {
 	return route.query.meetingId as string;
 });
 
-const enabledMedia: Record<string, boolean> = reactive({
-	audio: false,
-	video: false,
-});
-
-const videoTrackLabel: ComputedRef<string | undefined> = computed(() => {
-	return trackByKind(Track.Kind.Video)?.mediaStreamTrack.label;
-});
-
-const audioTrackLabel: ComputedRef<string | undefined> = computed(() => {
-	return trackByKind(Track.Kind.Audio)?.mediaStreamTrack.label;
-});
-
-function trackByKind(kind: Track.Kind): Track | undefined {
-	return tracks.value.find((track: Track): boolean => track.kind === kind);
+function trackLabelByKind(kind: Track.Kind): string|undefined {
+	return trackByKind(kind)?.mediaStreamTrack.label;
 }
 
-function onVideoSwitchUpdate(): void {
-	const videoTrack: LocalTrack = tracks.value.find((track: LocalTrack): boolean => track.kind === Track.Kind.Video)!;
-	if (enabledMedia.video) {
-		videoTrack.unmute();
-	} else {
-		videoTrack.mute();
-	}
+function trackByKind(kind: Track.Kind): LocalTrack | undefined {
+	return tracks.value.find((track: LocalTrack): boolean => track.kind === kind);
 }
 
-function onAudioSwitchUpdate(): void {
-	const videoTrack: LocalTrack = tracks.value.find((track: LocalTrack): boolean => track.kind === Track.Kind.Audio)!;
-	if (enabledMedia.audio) {
-		videoTrack.unmute();
+async function onVideoSwitchUpdate(): Promise<void> {
+	await mediaUpdate(Track.Kind.Video);
+}
+
+async function onAudioSwitchUpdate(): Promise<void> {
+	await mediaUpdate(Track.Kind.Audio);
+}
+
+async function mediaUpdate(kind: Track.Kind.Video|Track.Kind.Audio): Promise<void> {
+	const track: LocalTrack|undefined = trackByKind(kind);
+	if (!track) {
+		try {
+			tracks.value.push(
+				await (kind === Track.Kind.Video ? createLocalVideoTrack() : createLocalAudioTrack())
+			);
+		} catch {
+			toast.add({ severity: 'error', summary: 'Staging page', detail: 'Please enable browser access to ' + kind, life: 3000 });
+			settings.mediaPreferences[kind] = false;
+		}
 	} else {
-		videoTrack.mute();
+		await nextTick(() => {
+			if (settings.mediaPreferences[kind]) {
+				track.unmute();
+			} else {
+				track.mute();
+			}
+		})
 	}
 }
 
@@ -62,12 +69,12 @@ function onJoinButtonClick(): void {
 }
 
 onMounted(() => {
-	createLocalTracks({audio: true, video: true})
-		.then((enabledTracks: LocalTrack[]) => {
-			tracks.value = enabledTracks;
-			enabledMedia.audio = true;
-			enabledMedia.video = true;
-		});
+	if (Object.values(settings.mediaPreferences).some(enabledMedia => enabledMedia)) {
+		createLocalTracks(Object.assign({}, settings.mediaPreferences))
+			.then((enabledTracks: LocalTrack[]) => {
+				tracks.value = enabledTracks;
+			});
+	}
 });
 
 </script>
@@ -85,12 +92,12 @@ onMounted(() => {
 			</div>
 			<div class="media-controls">
 				<Panel :header="'Video'">
-					<p>{{ videoTrackLabel }}</p>
-					<ToggleSwitch v-model="enabledMedia.video" @change="onVideoSwitchUpdate"></ToggleSwitch>
+					<p>{{ trackLabelByKind(Track.Kind.Video) }}</p>
+					<ToggleSwitch ref="video-switch" v-model="settings.mediaPreferences.video" @change="onVideoSwitchUpdate"></ToggleSwitch>
 				</Panel>
 				<Panel :header="'Audio'">
-					<p>{{ audioTrackLabel }}</p>
-					<ToggleSwitch v-model="enabledMedia.audio" @change="onAudioSwitchUpdate"></ToggleSwitch>
+					<p>{{ trackLabelByKind(Track.Kind.Audio) }}</p>
+					<ToggleSwitch ref="audio-switch" v-model="settings.mediaPreferences.audio" @change="onAudioSwitchUpdate"></ToggleSwitch>
 				</Panel>
 			</div>
 		</div>
@@ -119,10 +126,12 @@ main {
 		}
 
 		.video-window {
+			flex: 5;
 			align-self: flex-start;
 		}
 
 		.media-controls {
+			flex: 3;
 			display: flex;
 			flex-direction: column;
 			gap: 8px;

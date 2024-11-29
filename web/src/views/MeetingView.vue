@@ -3,11 +3,11 @@ import {computed, type ComputedRef, onMounted, reactive, ref, type Ref} from 'vu
 import {useRoute} from 'vue-router';
 import {
 	type ChatMessage,
-	LocalParticipant, type LocalTrack,
+	LocalParticipant,
 	LocalTrackPublication,
 	Participant,
 	RemoteParticipant,
-	RemoteTrack,
+	RemoteTrack, RemoteTrackPublication,
 	Room,
 	RoomEvent,
 	Track,
@@ -23,8 +23,15 @@ import Button from 'primevue/button';
 import MeetingSidebar from '@/components/MeetingSidebar.vue';
 import VideoWindowLayout from '@/components/VideoWindowLayout.vue';
 import router from '@/router';
+import {useSettingsStore} from '@/stores/settings';
+import {useToast} from 'primevue/usetoast';
+import type {LocalUserWithTracks} from '@/types/local-user-with-tracks';
+import {TabNames} from '@/types/tab-names';
+import type {UserWithTracks} from '@/types/user-with-tracks';
 
 const route = useRoute();
+const toast = useToast();
+const settings = useSettingsStore();
 const currentUser = useCurrentUserStore();
 
 const room = new Room({
@@ -36,30 +43,20 @@ const room = new Room({
 });
 
 const messages: Ref<Message[]> = ref([]);
+const selectedTabId: Ref<TabNames> = ref(TabNames.Chat);
 const isSidebarVisible: Ref<boolean> = ref(false);
 
 const meetingId: Ref<string> = computed((): string => {
 	return route.params.meetingId as string;
 });
 
-const localParticipant: { audioTrack?: LocalTrack, videoTrack?: LocalTrack, user?: User } = reactive({});
-const remoteParticipants: Ref<Map<string, { audioTrack?: Track, videoTrack?: Track, user?: User }>> = ref(new Map);
+const localParticipant: LocalUserWithTracks = reactive({user: currentUser.user!});
+const remoteParticipants: Map<string, UserWithTracks> = reactive(new Map());
 
-const participantsWithTracks: ComputedRef<{ audioTrack?: Track, videoTrack?: Track, user: User }[]> = computed(() => {
-	return [...remoteParticipants.value]
-		.map(([_, participant]) => participant)
+const participantsWithTracks: ComputedRef<UserWithTracks[]> = computed(() => {
+	return [...remoteParticipants.values()]
 		.concat(localParticipant)
-		.filter(participant => participant.user !== undefined) as { audioTrack?: Track, videoTrack?: Track, user: User }[];
-});
-
-const participants: ComputedRef<User[]> = computed(() => {
-	return [
-		localParticipant.user!,
-		...([...remoteParticipants.value]
-			.map(([_, participant]) => participant)
-			.filter(participant => participant.user !== undefined)
-			.map((participant: { audioTrack?: Track, videoTrack?: Track, user?: User }) => participant.user!))
-	];
+		.filter(participant => participant.user);
 });
 
 async function mediaToken(): Promise<string> {
@@ -74,21 +71,19 @@ async function connectToRoom(token: string): Promise<void> {
 }
 
 function setupCurrentRoomState(): void {
-	localParticipant.user = currentUser.user!;
-
-	room.remoteParticipants.forEach((participant: Participant): void => {
-		const remoteParticipant: { user?: User } = {};
+	room.remoteParticipants.forEach(participant => {
 		if (participant.attributes.name) {
-			remoteParticipant.user = {
-				name: participant.attributes.name,
-				id: Number(participant.attributes.id)
-			};
+			remoteParticipants.set(participant.identity, {
+				user: {
+					name: participant.attributes.name,
+					id: Number(participant.attributes.id)
+				}
+			});
 		}
-		remoteParticipants.value.set(participant.identity, remoteParticipant);
 
 		participant.trackPublications.forEach((publication) => {
 			if (publication.track) {
-				handleTrackSubscribed(publication.track, publication, participant);
+				handleTrackSubscribed(publication.track as Track, publication, participant);
 			}
 		});
 	});
@@ -97,13 +92,15 @@ function setupCurrentRoomState(): void {
 function attachRoomEventHandlers() {
 	room
 		.on(RoomEvent.TrackSubscribed, handleTrackSubscribed)
-		.on(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribedSubscribed)
+		.on(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed)
 		.on(RoomEvent.LocalTrackPublished, handleLocalTrackPublished)
 		.on(RoomEvent.LocalTrackUnpublished, handleLocalTrackUnpublished)
 		.on(RoomEvent.ActiveSpeakersChanged, handleActiveSpeakerChange)
 		.on(RoomEvent.ChatMessage, handleChatMessage)
-		.on(RoomEvent.ParticipantConnected, handleParticipantConnected)
-		.on(RoomEvent.ParticipantAttributesChanged, handleParticipantAttributesChanged);
+		.on(RoomEvent.TrackMuted, handleTrackMuted)
+		.on(RoomEvent.TrackUnmuted, handleTrackUnMuted)
+		.on(RoomEvent.ParticipantAttributesChanged, handleParticipantAttributesChanged)
+		.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
 }
 
 function handleTrackSubscribed(
@@ -111,35 +108,82 @@ function handleTrackSubscribed(
 	publication: TrackPublication,
 	participant: Participant
 ): void {
+	const remoteParticipant = remoteParticipants.get(participant.identity);
+
 	if (track.kind === Track.Kind.Video) {
-		const remoteParticipant = remoteParticipants.value.get(participant.identity);
-		remoteParticipant!.videoTrack = track;
+		if (remoteParticipant && track.source === Track.Source.Camera) {
+			remoteParticipant.videoTrack = track;
+		} else if (remoteParticipant && track.source === Track.Source.ScreenShare) {
+			[...remoteParticipants.values()]
+				.forEach(participant => participant.screenVideoTrack = undefined)
+			remoteParticipant.screenVideoTrack = track;
+		}
 	} else if (track.kind === Track.Kind.Audio) {
-		const remoteParticipant = remoteParticipants.value.get(participant.identity);
-		remoteParticipant!.audioTrack = track;
+		if (remoteParticipant && track.source === Track.Source.Microphone) {
+			remoteParticipant.audioTrack = track;
+		} else if (remoteParticipant && track.source === Track.Source.ScreenShareAudio) {
+			[...remoteParticipants.values()]
+				.forEach(participant => participant.screenAudioTrack = undefined)
+			remoteParticipant.screenAudioTrack = track;
+		}
 	}
 }
 
-function handleTrackUnsubscribedSubscribed(
+function handleTrackUnsubscribed(
 	track: RemoteTrack,
+	publication: RemoteTrackPublication,
+	participant: RemoteParticipant,
 ): void {
-	track.detach();
+	const remoteParticipant = remoteParticipants.get(participant.identity);
+	if (!remoteParticipant) return;
+	if (track.source === Track.Source.Camera) {
+		remoteParticipant.videoTrack = undefined;
+	} else if (track.source === Track.Source.ScreenShare) {
+		remoteParticipant.screenVideoTrack = undefined;
+	} else if (track.source === Track.Source.Microphone) {
+		remoteParticipant.audioTrack = undefined;
+	} else if (track.source === Track.Source.ScreenShareAudio) {
+		remoteParticipant.screenAudioTrack = undefined;
+	}
+
 }
 
 function handleLocalTrackPublished(
 	publication: LocalTrackPublication,
 ): void {
 	if (publication.track?.kind === Track.Kind.Video) {
-		localParticipant.videoTrack = publication.track;
+		if (publication.track.source === Track.Source.Camera) {
+			localParticipant.videoTrack = publication.track;
+		} else if (publication.track.source === Track.Source.ScreenShare) {
+			localParticipant.screenVideoTrack = publication.track;
+
+			[...remoteParticipants.values()]
+				.forEach(participant => participant.screenVideoTrack = undefined)
+		}
 	} else if (publication.track?.kind === Track.Kind.Audio) {
-		localParticipant.audioTrack = publication.track;
+		if (publication.track.source === Track.Source.Microphone) {
+			localParticipant.audioTrack = publication.track;
+		} else if (publication.track.source === Track.Source.ScreenShareAudio) {
+			localParticipant.screenAudioTrack = publication.track;
+
+			[...remoteParticipants.values()]
+				.forEach(participant => participant.screenAudioTrack = undefined)
+		}
 	}
 }
 
 function handleLocalTrackUnpublished(
 	publication: LocalTrackPublication,
 ): void {
-	publication.track?.detach();
+	if (publication.track?.source === Track.Source.Camera) {
+		localParticipant.videoTrack = undefined;
+	} else if (publication.track?.source === Track.Source.ScreenShare) {
+		localParticipant.screenVideoTrack = undefined;
+	} else if (publication.track?.source === Track.Source.Microphone) {
+		localParticipant.audioTrack = undefined;
+	} else if (publication.track?.source === Track.Source.ScreenShareAudio) {
+		localParticipant.screenAudioTrack = undefined;
+	}
 }
 
 function handleActiveSpeakerChange(
@@ -150,7 +194,7 @@ function handleActiveSpeakerChange(
 	[...room.remoteParticipants.keys()]
 		.concat(room.localParticipant.identity)
 		.forEach((identity: string) => {
-			const author: User|undefined = userFromRoomIdentity(identity ?? '');
+			const author: User|undefined = userFromRoomIdentity(identity);
 			if (author && activeSpeakingParticipantsIdentities.includes(identity)) {
 				author.isSpeaking = true;
 			} else if (author) {
@@ -170,26 +214,49 @@ function handleChatMessage(message: ChatMessage, participant?: Participant): voi
 	}
 }
 
+function handleTrackMuted(publication: TrackPublication, participant: Participant): void {
+	const remoteParticipant = remoteParticipants.get(participant.identity)
+	if (remoteParticipant) {
+		if (publication.track?.source === Track.Source.Camera) {
+			remoteParticipant.videoTrackMuted = true;
+		} else if (publication.track?.source === Track.Source.Microphone) {
+			remoteParticipant.audioTrackMuted = true;
+		}
+	}
+}
+
+function handleTrackUnMuted(publication: TrackPublication, participant: Participant): void {
+	const remoteParticipant = remoteParticipants.get(participant.identity)
+	if (remoteParticipant) {
+		if (publication.track?.source === Track.Source.Camera) {
+			remoteParticipant.videoTrackMuted = false;
+		} else if (publication.track?.source === Track.Source.Microphone) {
+			remoteParticipant.audioTrackMuted = false;
+		}
+	}
+}
+
 function userFromRoomIdentity(identity: string): User|undefined {
 	const isLocalParticipantAuthor = identity === room.localParticipant.identity;
 
 	return isLocalParticipantAuthor
 		? localParticipant.user
-		: remoteParticipants.value.get(identity)?.user;
-}
-
-function handleParticipantConnected(participant: RemoteParticipant): void {
-	remoteParticipants.value.set(participant.identity, {});
+		: remoteParticipants.get(identity)?.user;
 }
 
 function handleParticipantAttributesChanged(changedAttributes: Record<string, string>, participant: RemoteParticipant | LocalParticipant): void {
 	if (participant.identity !== room.localParticipant.identity) {
-		const remoteParticipant = remoteParticipants.value.get(participant.identity);
-		remoteParticipant!.user = {
-			name: participant.attributes.name,
-			id: Number(participant.attributes.id),
-		};
+		remoteParticipants.set(participant.identity, {
+			user: {
+				name: participant.attributes.name,
+				id: Number(participant.attributes.id),
+			}
+		});
 	}
+}
+
+function handleParticipantDisconnected(participant: RemoteParticipant): void {
+	remoteParticipants.delete(participant.identity);
 }
 
 async function updateRoomLocalParticipant(): Promise<void> {
@@ -197,7 +264,12 @@ async function updateRoomLocalParticipant(): Promise<void> {
 		name: currentUser.user!.name,
 		id: String(currentUser.user!.id)
 	});
-	await room.localParticipant.enableCameraAndMicrophone();
+	if (Object.values(settings.mediaPreferences).every(preference => preference)) {
+		await room.localParticipant.enableCameraAndMicrophone();
+	} else {
+		await room.localParticipant.setCameraEnabled(settings.mediaPreferences.video);
+		await room.localParticipant.setMicrophoneEnabled(settings.mediaPreferences.audio);
+	}
 }
 
 async function onMessageCreated(body: string): Promise<void> {
@@ -208,23 +280,41 @@ function onSidebarClose(): void {
 	isSidebarVisible.value = false;
 }
 
-function onAudioControlClick(): void {
-	if (!localParticipant.audioTrack) return;
-
-	if (localParticipant.audioTrack?.isMuted) {
-		localParticipant.audioTrack.unmute()
-	} else {
-		localParticipant.audioTrack.mute()
-	}
+function onCameraControlClick(): void {
+	updateMedia(Track.Kind.Video);
 }
 
-function onCameraControlClick(): void {
-	if (!localParticipant.videoTrack) return;
+function onAudioControlClick(): void {
+	updateMedia(Track.Kind.Audio);
+}
 
-	if (localParticipant.videoTrack?.isMuted) {
-		localParticipant.videoTrack.unmute()
+async function updateMedia(kind: Track.Kind.Video|Track.Kind.Audio): Promise<void> {
+	const track = kind === Track.Kind.Video ? localParticipant.videoTrack : localParticipant.audioTrack;
+	if (!track) {
+		try {
+			await (kind === Track.Kind.Video
+				? room.localParticipant.setCameraEnabled(true)
+				: room.localParticipant.setMicrophoneEnabled(true))
+		} catch {
+			toast.add({ severity: 'error', summary: 'Staging page', detail: 'Please enable browser access to ' + kind, life: 3000 });
+			settings.mediaPreferences[kind] = false;
+		}
 	} else {
-		localParticipant.videoTrack.mute()
+		if (track.isMuted) {
+			await track.unmute();
+			if (kind === Track.Kind.Video) {
+				localParticipant.videoTrackMuted = false;
+			} else {
+				localParticipant.audioTrackMuted = false;
+			}
+		} else {
+			await track.mute();
+			if (kind === Track.Kind.Video) {
+				localParticipant.videoTrackMuted = true;
+			} else {
+				localParticipant.audioTrackMuted = true;
+			}
+		}
 	}
 }
 
@@ -233,15 +323,29 @@ function onRecordControlClick(): void {
 }
 
 function onMessageControlClick(): void {
-	isSidebarVisible.value = !isSidebarVisible.value;
+	if (!isSidebarVisible.value) {
+		isSidebarVisible.value = true;
+		selectedTabId.value = TabNames.Chat;
+	} else if (selectedTabId.value !== TabNames.Chat) {
+		selectedTabId.value = TabNames.Chat;
+	} else {
+		isSidebarVisible.value = false;
+	}
 }
 
 function onParticipantControlClick(): void {
-
+	if (!isSidebarVisible.value) {
+		isSidebarVisible.value = true;
+		selectedTabId.value = TabNames.Participants;
+	} else if (selectedTabId.value !== TabNames.Participants) {
+		selectedTabId.value = TabNames.Participants;
+	} else {
+		isSidebarVisible.value = false;
+	}
 }
 
 function onScreenShareControlClick(): void {
-	room.localParticipant.setScreenShareEnabled(true);
+	room.localParticipant.setScreenShareEnabled(!room.localParticipant.isScreenShareEnabled);
 }
 
 function onLeaveControlClick(): void {
@@ -263,13 +367,13 @@ onMounted(async (): Promise<void> => {
 	<main>
 		<div class="row">
 			<VideoWindowLayout
-				v-if="localParticipant.user"
 				:participants="participantsWithTracks"
 			></VideoWindowLayout>
 			<section class="sidebar" v-if="isSidebarVisible">
 				<MeetingSidebar
 					:messages="messages"
-					:participants="participants"
+					:participants="participantsWithTracks"
+					v-model="selectedTabId"
 					@message-created="onMessageCreated"
 					@close="onSidebarClose"
 				></MeetingSidebar>

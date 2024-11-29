@@ -4,9 +4,13 @@ import type {User} from '@/types/user';
 import InputText from 'primevue/inputtext';
 import FloatLabel from 'primevue/floatlabel';
 import ScrollPanel from 'primevue/scrollpanel';
-import type {Message as ChatMessage} from '@/types/message';
+import type {Message} from '@/types/message';
 import {useCurrentUserStore} from '@/stores/current-user';
 import Button from 'primevue/button';
+import ChatMessage from '@/components/ChatMessage.vue';
+import type {Track} from 'livekit-client';
+import {TabNames} from '@/types/tab-names';
+import type {UserWithTracks} from '@/types/user-with-tracks';
 
 interface MessageProps {
 	userId: number,
@@ -15,14 +19,15 @@ interface MessageProps {
 	timestamp: number,
 	isAuthenticatedPersonAuthor: boolean,
 	showDate: boolean,
-	showAuthor: boolean
+	showAuthor: boolean,
 }
 
+const selectedTabIdModel = defineModel();
 const currentUser = useCurrentUserStore();
 
 const props = defineProps<{
-	messages: ChatMessage[],
-	participants: User[],
+	messages: Message[],
+	participants: UserWithTracks[],
 }>();
 const emit = defineEmits<{
 	(e: 'messageCreated', body: string): void
@@ -30,19 +35,25 @@ const emit = defineEmits<{
 }>();
 
 const messageBody: Ref<string> = ref('');
+const participantsSearch: Ref<string> = ref('');
 
-const bottomContent: Ref<HTMLDivElement | null> = useTemplateRef('bottomContent');
+const bottomContent: Ref<HTMLDivElement | null> = useTemplateRef('bottom-content');
+
+const participants: ComputedRef<User[]> = computed(() => {
+	return props.participants
+		.map((participant): User => participant.user);
+});
 
 const messages: ComputedRef<MessageProps[]> = computed(() => {
 	return props.messages
-		.reduce((accumulator: MessageProps[], message: ChatMessage) => {
-			const previousMessage: ChatMessage | undefined = accumulator[accumulator.length - 1];
+		.reduce((accumulator: MessageProps[], message: Message) => {
+			const previousMessage: Message | undefined = accumulator[accumulator.length - 1];
 			const isPreviousMessageSameMinute = previousMessage && isSameMinute(previousMessage.timestamp, message.timestamp);
 			const isPreviousMessageAuthorSame = previousMessage && previousMessage.userId === message.userId;
 
 			const transformedMessage = {
 				userId: message.userId,
-				username: props.participants.find((participant: User): boolean => participant.id === message.userId)!.name,
+				username: participants.value.find((participant: User): boolean => participant.id === message.userId)!.name,
 				message: message.message,
 				timestamp: message.timestamp,
 				isAuthenticatedPersonAuthor: message.userId === currentUser.user!.id,
@@ -53,6 +64,14 @@ const messages: ComputedRef<MessageProps[]> = computed(() => {
 
 			return accumulator;
 		}, []);
+});
+
+const searchMatchingParticipants: ComputedRef<UserWithTracks[]> = computed(() => {
+	return props.participants
+		.filter((participant: { audioTrack?: Track, videoTrack?: Track, user: User }): boolean =>
+			participantsSearch.value === ''
+			|| participant.user.name.toLowerCase().includes(participantsSearch.value.toLowerCase())
+		);
 });
 
 function isSameMinute(timestamp1: number, timestamp2: number): boolean {
@@ -66,6 +85,10 @@ function isSameMinute(timestamp1: number, timestamp2: number): boolean {
 		date1.getMinutes() === date2.getMinutes();
 }
 
+function isTabActive(tab: TabNames): boolean {
+	return selectedTabIdModel.value === tab;
+}
+
 function scrollToBottom(): void {
 	nextTick(() => {
 		bottomContent.value?.scrollIntoView({block: 'end'});
@@ -77,6 +100,10 @@ function onEnterPressMessageInput(): void {
 		emit('messageCreated', messageBody.value);
 		messageBody.value = '';
 	}
+}
+
+function onTabChange(tab: TabNames): void {
+	selectedTabIdModel.value = tab;
 }
 
 function onCloseClick(): void {
@@ -94,24 +121,82 @@ watch(
 
 <template>
 	<section class="meeting-sidebar">
-		<Button @click="onCloseClick" class="close" icon="pi pi-times" size="small" severity="secondary" variant="text" rounded />
-		<ScrollPanel>
-			<ChatMessage
-				v-for="(message, index) in messages"
-				:key="index"
-				:username="message.username"
-				:message="message.message"
-				:timestamp="message.timestamp"
-				:is-authenticated-person-author="message.isAuthenticatedPersonAuthor"
-				:show-date="message.showDate"
-				:show-author="message.showAuthor"
-			></ChatMessage>
-			<div ref="bottomContent"></div>
-		</ScrollPanel>
-		<FloatLabel variant="on">
-			<InputText id="email" v-model="messageBody" type="text" @keydown.enter="onEnterPressMessageInput"></InputText>
-			<label for="email">Message</label>
-		</FloatLabel>
+		<div class="tab-list">
+			<div class="tab-select">
+				<Button @click="onTabChange(TabNames.Chat)"
+					:severity="isTabActive(TabNames.Chat) ? 'success' : 'secondary'"
+					:class="{'active': isTabActive(TabNames.Chat)}"
+					label="Chat"
+					icon="pi pi-th-large"
+					size="small"
+					variant="text" />
+				<Button @click="onTabChange(TabNames.Participants)"
+					:severity="selectedTabIdModel === TabNames.Participants ? 'success' : 'secondary'"
+					:class="{'active': isTabActive(TabNames.Participants)}"
+					label="Participants"
+					icon="pi pi-users"
+					size="small"
+					variant="text"/>
+				<Button @click="onCloseClick" class="close" icon="pi pi-times" size="small" severity="secondary" variant="text" rounded />
+			</div>
+			<div class="tab-content">
+				<div class="tab-panel" v-if="selectedTabIdModel === TabNames.Chat">
+					<ScrollPanel>
+						<ChatMessage
+							v-for="(message, index) in messages"
+							:key="index"
+							:username="message.username"
+							:message="message.message"
+							:timestamp="message.timestamp"
+							:is-authenticated-person-author="message.isAuthenticatedPersonAuthor"
+							:show-date="message.showDate"
+							:show-author="message.showAuthor"
+						></ChatMessage>
+						<div ref="bottom-content"></div>
+					</ScrollPanel>
+					<FloatLabel variant="on">
+						<InputText id="email" v-model="messageBody" type="text" @keydown.enter="onEnterPressMessageInput"></InputText>
+						<label for="email">Message</label>
+					</FloatLabel>
+				</div>
+				<div class="tab-panel" v-if="selectedTabIdModel === TabNames.Participants">
+					<FloatLabel variant="on">
+						<InputText id="search" v-model="participantsSearch" type="text"></InputText>
+						<label for="search">Search</label>
+					</FloatLabel>
+					<ScrollPanel>
+						<div class="participants-list">
+							<div
+								v-for="(participant, index) in searchMatchingParticipants"
+								class="participant-block"
+								:key="index"
+							>
+								<span>{{ participant.user.name }}</span>
+								<span class="media">
+									<span>
+										<i class="pi pi-microphone"></i>
+										<i class="pi pi-line" v-if="participant.audioTrack?.isMuted">
+											<svg width="16" height="16">
+												<line x1="0" y1="0" x2="16" y2="16"/>
+											</svg>
+										</i>
+									</span>
+									<span>
+										<i class="pi pi-camera"></i>
+										<i class="pi pi-line" v-if="participant.videoTrack?.isMuted">
+											<svg width="16" height="16">
+												<line x1="0" y1="0" x2="16" y2="16"/>
+											</svg>
+										</i>
+									</span>
+								</span>
+							</div>
+
+						</div>
+					</ScrollPanel>
+				</div>
+			</div>
+		</div>
 	</section>
 </template>
 
@@ -126,25 +211,83 @@ watch(
 	height: calc(100vh - 74px);
 	gap: 12px;
 
-	.close {
-		align-self: end;
-		min-height: 40px;
+	.tab-list {
+		.tab-select {
+			padding-bottom: 8px;
+			justify-content: space-between;
+			display: flex;
+			gap: 8px;
+			align-items: center;
+
+			.active {
+				border-bottom-left-radius: 0;
+				border-bottom-right-radius: 0;
+				border-bottom: 1px solid var(--p-primary-color);
+			}
+
+			.close {
+				min-height: 40px;
+			}
+		}
 	}
 
-	:deep(.p-scrollpanel) {
-		height: calc(100% - 94px);
-	}
+	.tab-content {
+		.tab-panel {
+			height: calc(100vh - 94px);
 
-	:deep(.p-scrollpanel-content) {
-		padding-bottom: 0;
-	}
+			:deep(.p-scrollpanel) {
+				height: calc(100% - 94px);
+			}
 
-	.bottomContent {
-		display: none;
-	}
+			:deep(.p-scrollpanel-content) {
+				padding-bottom: 0;
+			}
 
-	input {
-		width: 100%;
+			.bottom-content {
+				display: none;
+			}
+
+			input {
+				width: 100%;
+			}
+
+			.participants-list {
+				margin-top: 8px;
+				display: flex;
+				flex-direction: column;
+				gap: 8px;
+
+
+				.participant-block {
+					padding: 12px;
+					width: 100%;
+					border-radius: 6px;
+					background-color: var(--p-surface-700);
+					display: flex;
+					justify-content: space-between;
+
+					.media {
+						display: flex;
+						gap: 8px;
+
+						> span {
+							position: relative;
+
+							.pi-line {
+								position: absolute;
+								right: 4px;
+
+								svg {
+									stroke: var(--p-text-color);
+								}
+							}
+						}
+
+					}
+				}
+
+			}
+		}
 	}
 }
 </style>
