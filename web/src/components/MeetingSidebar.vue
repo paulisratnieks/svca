@@ -131,7 +131,7 @@ watch(
 					:severity="isTabActive(TabNames.Chat) ? 'success' : 'secondary'"
 					:class="{'active': isTabActive(TabNames.Chat)}"
 					label="Chat"
-					icon="pi pi-th-large"
+					class="chat"
 					size="small"
 					variant="text">
 					<template #icon><ChatIcon /></template>
@@ -140,7 +140,7 @@ watch(
 					:severity="selectedTabIdModel === TabNames.Participants ? 'success' : 'secondary'"
 					:class="{'active': isTabActive(TabNames.Participants)}"
 					label="Participants"
-					icon="pi pi-users"
+					class="participants"
 					size="small"
 					variant="text">
 					<template #icon><UserIcon /></template>
@@ -163,8 +163,8 @@ watch(
 						<div ref="bottom-content"></div>
 					</ScrollPanel>
 					<FloatLabel variant="on">
-						<InputText id="email" v-model="messageBody" type="text" @keydown.enter="onEnterPressMessageInput"></InputText>
-						<label for="email">Message</label>
+						<InputText id="message" v-model="messageBody" type="text" @keydown.enter="onEnterPressMessageInput"></InputText>
+						<label for="message">Message</label>
 					</FloatLabel>
 				</div>
 				<div class="tab-panel" v-if="selectedTabIdModel === TabNames.Participants">
