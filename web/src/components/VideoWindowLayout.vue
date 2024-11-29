@@ -1,32 +1,50 @@
 <script setup lang="ts">
-import type {User} from '@/types/user';
 import type {Track} from 'livekit-client';
 import VideoWindow from '@/components/VideoWindow.vue';
 import {computed, type ComputedRef, onMounted, onUnmounted, ref, type Ref, useTemplateRef, watch} from 'vue';
 import Paginator from 'primevue/paginator';
+import type {UserWithTracks} from '@/types/user-with-tracks';
+
+enum VideoLayoutType {
+	Grid = 'grid',
+	Carousel = 'carousel'
+}
 
 const props = defineProps<{
-	participants: {audioTrack?: Track, videoTrack?: Track, user: User}[],
+	participants: UserWithTracks[],
 }>();
 
-const maxVideoCountPerPage: number = 9;
-
+const isScreenBeingShared: Ref<boolean> = ref(false);
+const videoLayout: Ref<VideoLayoutType> = ref(VideoLayoutType.Grid);
 const firstRecordCountInPage: Ref<number> = ref(0);
 const resizeObserver: Ref<ResizeObserver|null> = ref(null);
 const isSizeWidth: Ref<boolean> = ref(true);
 const sizeInPixels: Ref<number> = ref(0);
+const carouselOtherSizeInPixels: Ref<number> = ref(0);
 const videosContainer: Ref<HTMLDivElement|null> = useTemplateRef('videos');
+
+const maxVideoCountPerPage: Ref<number> = computed(() => {
+	return videoLayout.value === VideoLayoutType.Grid ? 9 : 5;
+});
 
 const videosCount: Ref<number> = computed(() => {
 	return props.participants.length + 1;
 });
 
 const isPaginatorVisible: Ref<boolean> = computed(() => {
-	return videosCount.value > maxVideoCountPerPage;
+	return videosCount.value > maxVideoCountPerPage.value;
 });
 
-const visibleVideos: ComputedRef<{audioTrack?: Track, videoTrack?: Track, user: User}[]> = computed(() => {
-	return props.participants.slice(firstRecordCountInPage.value, maxVideoCountPerPage + firstRecordCountInPage.value);
+const screenVideoTracks: Ref<(Track|undefined)[]> = computed(() => {
+	return props.participants.map(participant => participant.screenVideoTrack)
+});
+
+const visibleVideos: ComputedRef<UserWithTracks[]> = computed(() => {
+	return props.participants.slice(firstRecordCountInPage.value, maxVideoCountPerPage.value + firstRecordCountInPage.value);
+});
+
+const screenSharingParticipant: ComputedRef<UserWithTracks|undefined> = computed(() => {
+	return props.participants.find(participant => participant.screenVideoTrack !== undefined);
 });
 
 function onResize(): void {
@@ -34,6 +52,14 @@ function onResize(): void {
 }
 
 function updateVideoLayout(): void {
+	if (videoLayout.value === VideoLayoutType.Grid) {
+		updateGridLayout();
+	} else {
+		updateCarouselLayout();
+	}
+}
+
+function updateGridLayout(): void {
 	const videosCount = visibleVideos.value.length;
 	const columnCount = Math.ceil(Math.sqrt(videosCount));
 	const rowCount = Math.ceil(videosCount / columnCount);
@@ -60,10 +86,43 @@ function updateVideoLayout(): void {
 	}
 }
 
+function updateCarouselLayout(): void {
+	const containerHeight = videosContainer.value?.offsetHeight;
+	if (!containerHeight) return;
+
+	const mainVideoHeightPercent = 0.75;
+	const otherVideoHeightPercent = 1 - mainVideoHeightPercent;
+	const gap = 8;
+	isSizeWidth.value = false;
+	sizeInPixels.value = (containerHeight * mainVideoHeightPercent) - gap * mainVideoHeightPercent;
+	carouselOtherSizeInPixels.value = (containerHeight * otherVideoHeightPercent) - gap * otherVideoHeightPercent;
+}
+
+function handleScreenShareTrackUpdate(): void {
+	const isSomeParticipantScreenSharing = props.participants.some(participant => participant.screenVideoTrack);
+
+	if (isSomeParticipantScreenSharing && !isScreenBeingShared.value) {
+		isScreenBeingShared.value = true;
+		videoLayout.value = VideoLayoutType.Carousel;
+		updateVideoLayout();
+	} else if (!isSomeParticipantScreenSharing && isScreenBeingShared.value) {
+		isScreenBeingShared.value = false;
+		videoLayout.value = VideoLayoutType.Grid;
+		updateVideoLayout();
+	}
+}
+
 watch(
 	visibleVideos,
 	() => {
-		updateVideoLayout()
+		updateVideoLayout();
+	}
+)
+
+watch(
+	screenVideoTracks,
+	() => {
+		handleScreenShareTrackUpdate()
 	}
 )
 
@@ -85,24 +144,53 @@ onUnmounted(() => {
 
 <template>
 	<section class="videos-container">
-		<div class="videos" ref="videos">
-			<VideoWindow
-				v-for="(participant, index) in visibleVideos"
-				:size="sizeInPixels"
-				:is-size-width="isSizeWidth"
-				:key="index"
-				:audio-track="participant.audioTrack"
-				:video-track="participant.videoTrack"
-				:user="participant.user"
-			/>
+		<div class="videos" ref="videos" :class="videoLayout">
+			<template v-if="videoLayout === VideoLayoutType.Grid">
+				<VideoWindow
+					v-for="(participant, index) in visibleVideos"
+					:size="sizeInPixels"
+					:is-size-width="isSizeWidth"
+					:key="index"
+					:audio-track="participant.audioTrack"
+					:audio-track-muted="participant.audioTrackMuted"
+					:video-track="participant.videoTrack"
+					:video-track-muted="participant.videoTrackMuted"
+					:user="participant.user"
+				/>
+			</template>
+			<template v-if="videoLayout === VideoLayoutType.Carousel">
+				<VideoWindow
+					v-if="screenSharingParticipant"
+					:size="sizeInPixels"
+					:is-size-width="isSizeWidth"
+					:audio-track="screenSharingParticipant.screenAudioTrack"
+					:audio-track-muted="screenSharingParticipant.audioTrackMuted"
+					:video-track="screenSharingParticipant.screenVideoTrack"
+					:video-track-muted="screenSharingParticipant.videoTrackMuted"
+					:user="screenSharingParticipant.user"
+				/>
+				<div>
+					<VideoWindow
+						v-for="(participant, index) in visibleVideos"
+						:size="carouselOtherSizeInPixels"
+						:is-size-width="isSizeWidth"
+						:key="index"
+						:audio-track="participant.audioTrack"
+						:audio-track-muted="participant.audioTrackMuted"
+						:video-track="participant.videoTrack"
+						:video-track-muted="participant.videoTrackMuted"
+						:user="participant.user"
+					/>
+				</div>
+			</template>
 		</div>
 		<div class="paginator-container">
 			<Paginator
 				v-if="isPaginatorVisible"
 				class="paginator"
 				v-model:first="firstRecordCountInPage"
-				:rows="9"
-				:totalRecords="10"
+				:rows="maxVideoCountPerPage"
+				:totalRecords="videosCount"
 				template="PrevPageLink CurrentPageReport NextPageLink"
 				currentPageReportTemplate="{currentPage} of {totalPages}"
 			/>
@@ -112,6 +200,8 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 section.videos-container {
+	margin: 8px;
+	box-sizing: border-box;
 	width: 100%;
 	display: flex;
 	flex-direction: column;
@@ -119,19 +209,34 @@ section.videos-container {
 
 	div.videos {
 		display: flex;
-		gap: 8px;
-		align-content: center;
-		flex-wrap: wrap;
+		height: 100%;
 		align-items: center;
-		justify-content: center;
-		flex: 1;
+
+		&.grid {
+			gap: 8px;
+			align-content: center;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: center;
+			flex: 1;
+		}
+
+		&.carousel {
+			flex-direction: column;
+			gap: 8px;
+
+			> div {
+				display: flex;
+				gap: 8px;
+			}
+		}
 	}
 
 	.paginator-container {
 		width: 100%;
 		display: flex;
 		justify-content: center;
-		margin-bottom: 8px;
+		margin-top: 8px;
 
 		:deep(.p-paginator) {
 			padding: 0;

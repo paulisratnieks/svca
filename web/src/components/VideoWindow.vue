@@ -10,7 +10,9 @@ const video: Ref<HTMLVideoElement | null> = useTemplateRef('video');
 const props = defineProps<{
 	user: User,
 	audioTrack?: Track,
+	audioTrackMuted?: boolean,
 	videoTrack?: Track,
+	videoTrackMuted?: boolean,
 	size?: number,
 	isSizeWidth?: boolean,
 }>();
@@ -55,7 +57,6 @@ onMounted(() => {
 	if (props.videoTrack) {
 		attachTrackToVideo(props.videoTrack)
 	}
-
 });
 </script>
 
@@ -70,7 +71,7 @@ onMounted(() => {
 		></ParticipantLabel>
 		<ParticipantLogo
 			:name="user.name"
-			v-show="videoTrack?.isMuted"
+			v-if="videoTrack?.isMuted ?? false"
 		></ParticipantLogo>
 	</div>
 </template>
