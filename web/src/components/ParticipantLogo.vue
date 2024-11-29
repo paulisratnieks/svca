@@ -8,7 +8,8 @@ const props = defineProps<{
 const personInitials: ComputedRef<string> = computed(() => {
 	const name: string[] = props.name.split(' ');
 
-	return name[0][0] + name[name.length - 1][0];
+	return name[0][0].toUpperCase()
+		+ (name.length > 1 ? name[name.length - 1][0].toUpperCase() : '');
 });
 
 </script>

@@ -163,9 +163,9 @@ onUnmounted(() => {
 					v-if="screenSharingParticipant"
 					:size="sizeInPixels"
 					:is-size-width="isSizeWidth"
-					:audio-track="screenSharingParticipant.screenAudioTrack"
+					:audio-track="screenSharingParticipant.audioTrack"
 					:audio-track-muted="screenSharingParticipant.audioTrackMuted"
-					:video-track="screenSharingParticipant.screenVideoTrack"
+					:video-track="screenSharingParticipant.videoTrack"
 					:video-track-muted="screenSharingParticipant.videoTrackMuted"
 					:user="screenSharingParticipant.user"
 				/>
