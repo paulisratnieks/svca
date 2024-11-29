@@ -11,6 +11,10 @@ import ChatMessage from '@/components/ChatMessage.vue';
 import type {Track} from 'livekit-client';
 import {TabNames} from '@/types/tab-names';
 import type {UserWithTracks} from '@/types/user-with-tracks';
+import MicrophoneIcon from '@/components/icons/MicrophoneIcon.vue';
+import CameraIcon from '@/components/icons/CameraIcon.vue';
+import ChatIcon from '@/components/icons/ChatIcon.vue';
+import UserIcon from '@/components/icons/UserIcon.vue';
 
 interface MessageProps {
 	userId: number,
@@ -129,14 +133,18 @@ watch(
 					label="Chat"
 					icon="pi pi-th-large"
 					size="small"
-					variant="text" />
+					variant="text">
+					<template #icon><ChatIcon /></template>
+				</Button>
 				<Button @click="onTabChange(TabNames.Participants)"
 					:severity="selectedTabIdModel === TabNames.Participants ? 'success' : 'secondary'"
 					:class="{'active': isTabActive(TabNames.Participants)}"
 					label="Participants"
 					icon="pi pi-users"
 					size="small"
-					variant="text"/>
+					variant="text">
+					<template #icon><UserIcon /></template>
+				</Button>
 				<Button @click="onCloseClick" class="close" icon="pi pi-times" size="small" severity="secondary" variant="text" rounded />
 			</div>
 			<div class="tab-content">
@@ -173,25 +181,10 @@ watch(
 							>
 								<span>{{ participant.user.name }}</span>
 								<span class="media">
-									<span>
-										<i class="pi pi-microphone"></i>
-										<i class="pi pi-line" v-if="participant.audioTrack?.isMuted">
-											<svg width="16" height="16">
-												<line x1="0" y1="0" x2="16" y2="16"/>
-											</svg>
-										</i>
-									</span>
-									<span>
-										<i class="pi pi-camera"></i>
-										<i class="pi pi-line" v-if="participant.videoTrack?.isMuted">
-											<svg width="16" height="16">
-												<line x1="0" y1="0" x2="16" y2="16"/>
-											</svg>
-										</i>
-									</span>
+									<MicrophoneIcon :is-off="participant.audioTrackMuted ?? false"></MicrophoneIcon>
+									<CameraIcon :is-off="participant.videoTrackMuted ?? false"></CameraIcon>
 								</span>
 							</div>
-
 						</div>
 					</ScrollPanel>
 				</div>
@@ -223,6 +216,10 @@ watch(
 				border-bottom-left-radius: 0;
 				border-bottom-right-radius: 0;
 				border-bottom: 1px solid var(--p-primary-color);
+
+				img {
+					filter: brightness(0) saturate(100%) invert(99%) sepia(70%) saturate(1755%) hue-rotate(76deg) brightness(86%) contrast(90%);
+				}
 			}
 
 			.close {
@@ -269,20 +266,6 @@ watch(
 					.media {
 						display: flex;
 						gap: 8px;
-
-						> span {
-							position: relative;
-
-							.pi-line {
-								position: absolute;
-								right: 4px;
-
-								svg {
-									stroke: var(--p-text-color);
-								}
-							}
-						}
-
 					}
 				}
 
