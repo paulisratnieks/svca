@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class MediaTokenRequest extends FormRequest
+class RecordingStoreRequest extends FormRequest
 {
     /**
      * @return array<string, string[]>

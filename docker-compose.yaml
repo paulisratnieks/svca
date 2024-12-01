@@ -13,6 +13,15 @@ services:
     network_mode: "host"
     volumes:
       - ./docker/livekit/livekit.yaml:/etc/livekit.yaml
+  egress:
+    image: livekit/egress:v1.8
+    environment:
+      - EGRESS_CONFIG_FILE=/egress.yaml
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      - ./api/storage/app/private/recordings:/out
+      - ./docker/livekit/egress.yaml:/egress.yaml
   nginx:
     build:
       context: .

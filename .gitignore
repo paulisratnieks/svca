@@ -1,3 +1,4 @@
 /.idea
 /docker/web/certs/*
 /docker/livekit/livekit.yaml
+/docker/livekit/egress.yaml
