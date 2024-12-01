@@ -77,6 +77,7 @@ class RecordingsTest extends TestCase
     public function test_when_user_updates_recording_then_model_timestamp_updated(): void
     {
         $pastDateTime = Carbon::now()->subMinute();
+        $futureDateTime = Carbon::now()->addMinute();
         $user = User::factory()
             ->create();
         $recording = Recording::factory()
@@ -86,7 +87,6 @@ class RecordingsTest extends TestCase
             ->for($user)
             ->active()
             ->create();
-        $futureDateTime = Carbon::now()->subHour();
 
         $this->actingAs($user)
             ->patch('recordings/' . $recording->id)
@@ -97,7 +97,7 @@ class RecordingsTest extends TestCase
             Recording::firstOrFail()->updated_at,
             $this->logicalAnd(
                 $this->greaterThan($pastDateTime),
-                $this->greaterThan($futureDateTime),
+                $this->lessThan($futureDateTime),
             )
         );
     }
