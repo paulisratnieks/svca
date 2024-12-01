@@ -12,7 +12,7 @@ class MediaTokenTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_when_user_requests(): void
+    public function test_when_user_request_token_endpoint_then_recieves_successful_token_response(): void
     {
         $token = fake()->word();
         $this->partialMock(AccessToken::class, function (MockInterface $mock) use ($token): void {

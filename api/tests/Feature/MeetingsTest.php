@@ -3,10 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Meeting;
-use App\Models\Recording;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 class MeetingsTest extends TestCase
@@ -18,7 +16,7 @@ class MeetingsTest extends TestCase
         $response = $this->actingAs(User::factory()->create())
             ->postJson('meetings');
         $response
-            ->assertStatus(200)
+            ->assertSuccessful()
             ->assertJson(['id' => Meeting::firstOrFail()->id]);
     }
 }
