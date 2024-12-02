@@ -101,10 +101,12 @@ function setupCurrentRoomState(): void {
 		});
 	});
 
-	handleRecordingStatusChanged(room.isRecording)
+	if (room.isRecording) {
+		handleRecordingStatusChanged(room.isRecording)
+	}
 }
 
-function attachRoomEventHandlers() {
+function attachRoomEventHandlers(): void {
 	room
 		.on(RoomEvent.TrackSubscribed, handleTrackSubscribed)
 		.on(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed)
