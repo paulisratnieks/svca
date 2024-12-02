@@ -43,6 +43,8 @@ services:
       context: .
       dockerfile: docker/api/Dockerfile
     network_mode: "host"
+    volumes:
+      - ./api/storage/app/private/recordings:/var/www/html/storage/app/private/recordings
   mysql:
     image: mysql/mysql-server:8.0
     ports:
