@@ -1,0 +1,9 @@
+api_key: api_key_placeholder
+api_secret: api_secret_placeholder
+
+ws_url: wss://livekit.svca.local
+redis:
+  address: 127.0.0.1:6379
+
+session_limits:
+  file_output_max_duration: 1h

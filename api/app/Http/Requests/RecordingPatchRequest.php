@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class MediaTokenRequest extends FormRequest
+class RecordingPatchRequest extends FormRequest
 {
     /**
      * @return array<string, string[]>
@@ -12,7 +12,7 @@ class MediaTokenRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'room_name' => ['required', 'uuid'],
+            'id' => ['required', 'numeric'],
         ];
     }
 }

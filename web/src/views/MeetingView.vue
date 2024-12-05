@@ -34,10 +34,13 @@ import ScreenShareIcon from '@/components/icons/ScreenShareIcon.vue';
 import RecordIcon from '@/components/icons/RecordIcon.vue';
 import ChatIcon from '@/components/icons/ChatIcon.vue';
 import UserIcon from '@/components/icons/UserIcon.vue';
+import {useRecordingsStore} from '@/stores/recordings';
+import axios, {HttpStatusCode} from 'axios';
 
 const route = useRoute();
 const toast = useToast();
 const settings = useSettingsStore();
+const recordings = useRecordingsStore();
 const currentUser = useCurrentUserStore();
 
 const room = new Room({
@@ -51,10 +54,13 @@ const room = new Room({
 const messages: Ref<Message[]> = ref([]);
 const selectedTabId: Ref<TabNames> = ref(TabNames.Chat);
 const isSidebarVisible: Ref<boolean> = ref(false);
-const isRecording: Ref<boolean> = ref(false);
 
 const meetingId: Ref<string> = computed((): string => {
 	return route.params.meetingId as string;
+});
+
+const isRecording: Ref<boolean> = computed((): boolean => {
+	return recordings.statuses[meetingId.value];
 });
 
 const localParticipant: LocalUserWithTracks = reactive({user: currentUser.user!});
@@ -94,9 +100,13 @@ function setupCurrentRoomState(): void {
 			}
 		});
 	});
+
+	if (room.isRecording) {
+		handleRecordingStatusChanged(room.isRecording)
+	}
 }
 
-function attachRoomEventHandlers() {
+function attachRoomEventHandlers(): void {
 	room
 		.on(RoomEvent.TrackSubscribed, handleTrackSubscribed)
 		.on(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed)
@@ -106,6 +116,7 @@ function attachRoomEventHandlers() {
 		.on(RoomEvent.ChatMessage, handleChatMessage)
 		.on(RoomEvent.TrackMuted, handleTrackMuted)
 		.on(RoomEvent.TrackUnmuted, handleTrackUnMuted)
+		.on(RoomEvent.RecordingStatusChanged, handleRecordingStatusChanged)
 		.on(RoomEvent.ParticipantAttributesChanged, handleParticipantAttributesChanged)
 		.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
 }
@@ -243,6 +254,16 @@ function handleTrackUnMuted(publication: TrackPublication, participant: Particip
 	}
 }
 
+function handleRecordingStatusChanged(recordingStatus: boolean): void {
+	if (recordingStatus) {
+		toast.add({ severity: 'info', summary: 'Meeting page', detail: 'Recording has started', life: 3000 });
+	} else {
+		toast.add({ severity: 'info', summary: 'Meeting page', detail: 'Recording has stopped', life: 3000 });
+	}
+	recordings.statuses[meetingId.value] = recordingStatus;
+}
+
+
 function userFromRoomIdentity(identity: string): User|undefined {
 	const isLocalParticipantAuthor = identity === room.localParticipant.identity;
 
@@ -325,8 +346,27 @@ async function updateMedia(kind: Track.Kind.Video|Track.Kind.Audio): Promise<voi
 	}
 }
 
-function onRecordControlClick(): void {
-	isRecording.value = !isRecording.value;
+async function onRecordControlClick(): Promise<void> {
+	if (isRecording.value) {
+		const recordingIds = recordings.ids;
+		const recordingId = recordingIds[meetingId.value];
+		try {
+			await useAxios().patch(`recordings/${recordingId}/stop` , {
+				room_name: meetingId.value
+			});
+			delete recordingIds[meetingId.value];
+		} catch (error: unknown) {
+			if (axios.isAxiosError(error) && error.status === HttpStatusCode.NotFound) {
+				toast.add({ severity: 'error', summary: 'Meeting page', detail: 'You are not authorized to cancel the recordings. Only the recording author can stop it', life: 3000 });
+			}
+		}
+	} else {
+		const recordingId = (await useAxios().post('recordings', {
+			room_name: meetingId.value
+		})).data.id;
+		const recordingIds = recordings.ids;
+		recordingIds[meetingId.value] = recordingId;
+	}
 }
 
 function onMessageControlClick(): void {

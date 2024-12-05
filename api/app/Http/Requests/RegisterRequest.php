@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class RegisterRequest extends FormRequest
 {
     /**
-     * @return array<string, array<string>>
+     * @return array<string, string[]>
      */
     public function rules(): array
     {

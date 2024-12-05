@@ -8,3 +8,6 @@ parameters:
 		- bootstrap
 		- routes
 		- tests
+	ignoreErrors:
+	    - '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::once\(\).#'
+	    - '#Parameter \#1 \$var of method Livekit\\EgressInfo::setFileResults\(\) expects Google\\Protobuf\\Internal\\RepeatedField&iterable<Livekit\\FileInfo>, array<int, Livekit\\FileInfo> given.#'
