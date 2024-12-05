@@ -10,11 +10,10 @@ return new class extends Migration {
         Schema::create('recordings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
-            $table->string('egress_id')->nullable();
+            $table->string('egress_id');
             $table->boolean('active');
-            $table->string('file_name')->nullable();
-            $table->timestamp('created_at');
-            $table->timestamp('updated_at');
+            $table->string('file_name');
+            $table->timestamps();
         });
     }
 

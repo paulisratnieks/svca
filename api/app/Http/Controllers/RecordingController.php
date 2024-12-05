@@ -5,12 +5,12 @@ namespace App\Http\Controllers;
 use Agence104\LiveKit\EgressServiceClient;
 use App\Http\Requests\RecordingStoreRequest;
 use App\Models\Recording;
-use ErrorException;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Livekit\EncodedFileOutput;
 use Livekit\EncodedFileType;
+use Livekit\FileInfo;
 use Throwable;
 
 class RecordingController extends Controller
@@ -27,29 +27,24 @@ class RecordingController extends Controller
      */
     public function store(RecordingStoreRequest $request): JsonResponse
     {
+        $request = $this->egressServiceClient
+            ->startRoomCompositeEgress(
+                $request->string('room_name'),
+                self::RecordingLayout,
+                (new EncodedFileOutput())
+                    ->setFilepath($this->recordingFileName($request->string('room_name')))
+                    ->setFileType(EncodedFileType::MP4)
+            );
+        /**
+         * @var FileInfo $recordingFileInfo
+         */
+        $recordingFileInfo = $request->getFileResults()->offsetGet(0);
         $recording = Recording::create([
             'user_id' => auth()->id(),
             'active' => true,
+            'egress_id' => $request->getEgressId(),
+            'file_name' => $recordingFileInfo->getFilename(),
         ]);
-
-        try {
-            $roomName = $request->validated('room_name');
-            $request = $this->egressServiceClient
-                ->startRoomCompositeEgress(
-                    $request->string('room_name'),
-                    self::RecordingLayout,
-                    (new EncodedFileOutput())
-                        ->setFilepath(self::BaseRecordingPath . $roomName . '-' . $recording->id)
-                        ->setFileType(EncodedFileType::MP4)
-                );
-
-            $recording->file_name = $roomName . '-' . $recording->id . '.' . strtolower(EncodedFileType::name(EncodedFileType::MP4));
-            $recording->egress_id = $request->getEgressId();
-            $recording->save();
-        } catch (Exception $exception) {
-            $recording->delete();
-            throw $exception;
-        }
 
         return response()->json([
             'id' => $recording->id,
@@ -83,5 +78,10 @@ class RecordingController extends Controller
         $recording->updateOrFail(['active' => false]);
 
         return response()->noContent();
+    }
+
+    private function recordingFileName(string $meetingId): string
+    {
+        return self::BaseRecordingPath . $meetingId . '-' . time();
     }
 }
