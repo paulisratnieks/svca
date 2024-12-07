@@ -6,6 +6,8 @@ use Database\Factories\MeetingFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  *
@@ -36,4 +38,20 @@ class Meeting extends Model
     protected $fillable = [
         'user_id',
     ];
+
+    /**
+     * @return BelongsToMany<User, $this>
+     */
+    public function participants(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
+    }
+
+    /**
+     * @return HasMany<Recording, $this>
+     */
+    public function recordings(): HasMany
+    {
+        return $this->hasMany(Recording::class);
+    }
 }

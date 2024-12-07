@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $user_id
  * @property string $egress_id
- * @property int $active
+ * @property bool $active
  * @property string $file_name
  * @property \Illuminate\Support\Carbon $last_ping
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -42,13 +42,14 @@ class Recording extends Model
     use HasFactory;
 
     protected $casts = [
-        'last_ping' => 'datetime',
+        'active' => 'boolean',
     ];
 
     protected $fillable = [
         'active',
         'egress_id',
         'user_id',
+        'meeting_id',
         'file_name',
     ];
 
@@ -61,11 +62,27 @@ class Recording extends Model
     }
 
     /**
+     * @return BelongsTo<Meeting, $this>
+     */
+    public function meeting(): BelongsTo
+    {
+        return $this->belongsTo(Meeting::class);
+    }
+
+    /**
      * @param Builder<self> $query
      */
     public function scopeActive(Builder $query): void
     {
         $query->where('active', true);
+    }
+
+    /**
+     * @param Builder<self> $query
+     */
+    public function scopeInactive(Builder $query): void
+    {
+        $query->where('active', false);
     }
 
     /**

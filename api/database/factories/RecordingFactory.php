@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Meeting;
 use App\Models\Recording;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -19,7 +20,8 @@ class RecordingFactory extends Factory
         return [
             'active' => fake()->boolean(),
             'egress_id' => fake()->word(),
-            'file_name' => fake()->filePath(),
+            'file_name' => fake()->word(),
+            'meeting_id' => Meeting::factory()->create()->id,
             'user_id' => User::factory()->create()->id,
         ];
     }

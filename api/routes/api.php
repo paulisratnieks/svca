@@ -13,8 +13,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
         return $request->user();
     });
     Route::resource('meetings', MeetingController::class)->only('store');
-    Route::resource('recordings', RecordingController::class)->only('store', 'update');
-    Route::patch('recordings/{recordingId}/stop', [RecordingController::class, 'stop']);
+    Route::resource('recordings', RecordingController::class)->only('index', 'show', 'store', 'update', 'destroy');
+    Route::patch('recordings/{recording}/stop', [RecordingController::class, 'stop']);
+    Route::get('recordings/{recording}/download', [RecordingController::class, 'download']);
 });
 
 Route::post('/login', [AuthenticationController::class, 'authenticate']);

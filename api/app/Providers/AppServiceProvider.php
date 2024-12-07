@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\EgressServiceClient;
+use App\Http\Controllers\RecordingController;
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,5 +28,9 @@ class AppServiceProvider extends ServiceProvider
             (string) env('LIVEKIT_API_KEY'),
             (string) env('LIVEKIT_API_SECRET'),
         ));
+
+        $this->app->when(RecordingController::class)
+            ->needs(Filesystem::class)
+            ->give(fn(): Filesystem => Storage::disk('recordings'));
     }
 }

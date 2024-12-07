@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Agence104\LiveKit\AccessToken;
+use App\Models\Meeting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery\MockInterface;
@@ -23,7 +24,7 @@ class MediaTokenTest extends TestCase
 
         $this
             ->actingAs(User::factory()->create())
-            ->getJson('/token?' . http_build_query(['room_name' => fake()->uuid()]))
+            ->getJson('/token?' . http_build_query(['room_name' => Meeting::factory()->create()->id]))
             ->assertSuccessful()
             ->assertJson(['data' => $token]);
     }

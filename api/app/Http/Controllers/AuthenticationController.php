@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthenticationController extends Controller
 {
@@ -28,7 +29,7 @@ class AuthenticationController extends Controller
 
         return response()->json([
             'message' => 'Invalid login credentials',
-        ], 401);
+        ], Response::HTTP_UNAUTHORIZED);
     }
 
     public function register(RegisterRequest $request): JsonResponse
@@ -39,6 +40,6 @@ class AuthenticationController extends Controller
             'name' => $request->validated('name'),
         ]);
 
-        return response()->json(status: 201);
+        return response()->json(status: Response::HTTP_CREATED);
     }
 }
