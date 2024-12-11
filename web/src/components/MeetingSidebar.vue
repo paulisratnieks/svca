@@ -5,7 +5,7 @@ import InputText from 'primevue/inputtext';
 import FloatLabel from 'primevue/floatlabel';
 import ScrollPanel from 'primevue/scrollpanel';
 import type {Message} from '@/types/message';
-import {useCurrentUserStore} from '@/stores/current-user';
+import {useAuth} from '@/stores/auth';
 import Button from 'primevue/button';
 import ChatMessage from '@/components/ChatMessage.vue';
 import type {Track} from 'livekit-client';
@@ -27,7 +27,7 @@ interface MessageProps {
 }
 
 const selectedTabIdModel = defineModel();
-const currentUser = useCurrentUserStore();
+const auth = useAuth();
 
 const props = defineProps<{
 	messages: Message[],
@@ -60,7 +60,7 @@ const messages: ComputedRef<MessageProps[]> = computed(() => {
 				username: participants.value.find((participant: User): boolean => participant.id === message.userId)!.name,
 				message: message.message,
 				timestamp: message.timestamp,
-				isAuthenticatedPersonAuthor: message.userId === currentUser.user!.id,
+				isAuthenticatedPersonAuthor: message.userId === auth.user!.id,
 				showDate: !isPreviousMessageSameMinute,
 				showAuthor: !isPreviousMessageAuthorSame,
 			}

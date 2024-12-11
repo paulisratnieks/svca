@@ -4,20 +4,25 @@ import type {User} from '@/types/user';
 import type {AxiosResponse} from 'axios';
 import {useAxios} from '@/composables/axios';
 
-export const useCurrentUserStore = defineStore('current-user', () => {
+export const useAuth = defineStore('auth', () => {
 	const user: Ref<User | null> = ref(null);
 
 	function fetch(): Promise<void> {
 		return useAxios().get('user')
 			.then((response: AxiosResponse<User>): void => {
 				user.value = response.data;
-			})
-			.catch((response: AxiosResponse): void => {
-				console.log(response);
 			});
 	}
 
-	return { user, fetch };
+	function isAuthenticated(): boolean {
+		return user.value !== null;
+	}
+
+	function $reset(): void {
+		user.value = null;
+	}
+
+	return { user, fetch, isAuthenticated, $reset };
 }, {
 	persist: {
 		pick: ['user'],

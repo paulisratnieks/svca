@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import {reactive} from 'vue';
+import {reactive, ref, type Ref} from 'vue';
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from 'axios';
-import {useCurrentUserStore} from '@/stores/current-user';
+import {useAuth} from '@/stores/auth';
 import router from '@/router';
 import {useAxios} from '@/composables/axios';
 import InputText from 'primevue/inputtext';
@@ -10,9 +10,10 @@ import Button from 'primevue/button';
 import FloatLabel from 'primevue/floatlabel';
 import {useToast} from 'primevue/usetoast';
 
-const currentUser = useCurrentUserStore();
+const auth = useAuth();
 const toast = useToast();
 
+const loading: Ref<boolean> = ref(false);
 const form: Record<string, { value: string, error?: string }> = reactive({
 	email: {
 		value: '',
@@ -32,10 +33,16 @@ function loginRequestBody(): Record<string, string> {
 	}, {})
 }
 
+function onSignUpButtonClick(): void {
+	router.push({path: '/signup'});
+}
+
 function onLoginButtonClick(): void {
+	loading.value = true;
+	Object.keys(form).forEach((field) => form[field].error = '');
 	useAxios().get('sanctum/csrf-cookie')
 		.then((): Promise<AxiosResponse<{ message: string }>> => useAxios().post('login', loginRequestBody()))
-		.then((): Promise<void> => currentUser.fetch())
+		.then((): Promise<void> => auth.fetch())
 		.then((): void => {
 			toast.add({ severity: 'success', summary: 'Login page', detail: 'Login successful', life: 3000 });
 			router.push({path: '/'})
@@ -48,6 +55,9 @@ function onLoginButtonClick(): void {
 			} else if (response.status === HttpStatusCode.Unauthorized && response.response?.data.message) {
 				form.password.error = response.response?.data.message;
 			}
+		})
+		.finally(() => {
+			loading.value = false;
 		});
 }
 </script>
@@ -73,9 +83,13 @@ function onLoginButtonClick(): void {
 						<small v-if="form.password.error">{{ form.password.error }}</small>
 					</div>
 					<Button
+						:loading="loading"
 						:label="'Log in'"
 						@click="onLoginButtonClick">
 					</Button>
+					<div class="sign-up">Don't have an acoount?
+						<Button variant="link" label="Sign Up" @click="onSignUpButtonClick"></Button>
+					</div>
 				</div>
 			</template>
 		</Card>
@@ -105,6 +119,14 @@ main {
 
 			small {
 				color: $color-red;
+			}
+		}
+
+		.sign-up {
+			margin: 0 auto;
+
+			:deep(.p-button) {
+				padding: 0;
 			}
 		}
 	}

@@ -14,7 +14,7 @@ import {
 	TrackPublication,
 	VideoPresets
 } from 'livekit-client';
-import {useCurrentUserStore} from '@/stores/current-user';
+import {useAuth} from '@/stores/auth';
 import {useAxios} from '@/composables/axios';
 import type {User} from '@/types/user';
 import type {Message} from '@/types/message';
@@ -41,7 +41,7 @@ const route = useRoute();
 const toast = useToast();
 const settings = useSettingsStore();
 const recordings = useRecordingsStore();
-const currentUser = useCurrentUserStore();
+const auth = useAuth();
 
 const room = new Room({
 	adaptiveStream: true,
@@ -63,7 +63,7 @@ const isRecording: Ref<boolean> = computed((): boolean => {
 	return recordings.statuses[meetingId.value];
 });
 
-const localParticipant: LocalUserWithTracks = reactive({user: currentUser.user!});
+const localParticipant: LocalUserWithTracks = reactive({user: auth.user!});
 const remoteParticipants: Map<string, UserWithTracks> = reactive(new Map());
 
 const participantsWithTracks: ComputedRef<UserWithTracks[]> = computed(() => {
@@ -73,10 +73,18 @@ const participantsWithTracks: ComputedRef<UserWithTracks[]> = computed(() => {
 });
 
 async function mediaToken(): Promise<string> {
-	return (await useAxios().get('token', {
-			params: {room_name: meetingId.value}
-		}
-	)).data.data;
+	let token = '';
+	try {
+		token = (await useAxios().get('token', {
+				params: {room_name: meetingId.value}
+			}
+		)).data.data;
+	} catch {
+		router.push({path: '/meetings-start'});
+		toast.add({ severity: 'error', summary: 'Meeting page', detail: 'Meeting join failed', life: 3000 });
+	}
+
+	return token;
 }
 
 async function connectToRoom(token: string): Promise<void> {
@@ -289,8 +297,8 @@ function handleParticipantDisconnected(participant: RemoteParticipant): void {
 
 async function updateRoomLocalParticipant(): Promise<void> {
 	await room.localParticipant.setAttributes({
-		name: currentUser.user!.name,
-		id: String(currentUser.user!.id)
+		name: auth.user!.name,
+		id: String(auth.user!.id)
 	});
 	if (Object.values(settings.mediaPreferences).every(preference => preference)) {
 		await room.localParticipant.enableCameraAndMicrophone();
@@ -395,8 +403,18 @@ function onScreenShareControlClick(): void {
 	room.localParticipant.setScreenShareEnabled(!room.localParticipant.isScreenShareEnabled);
 }
 
+function onMeetingIdButtonClick(): void {
+	navigator.clipboard.writeText(meetingId.value)
+		.then(() => {
+			toast.add({ severity: 'info', summary: 'Meeting page', detail: 'Meeting ID successfully copied to clipboard', life: 3000 });
+		})
+		.catch(() => {
+			toast.add({ severity: 'error', summary: 'Meeting page', detail: 'Meeting ID copy to clipboard failed', life: 3000 });
+		});
+}
+
 function onLeaveControlClick(): void {
-	router.push({path: '/'})
+	router.push({path: '/meetings-start'})
 }
 
 onMounted(async (): Promise<void> => {
@@ -427,6 +445,9 @@ onMounted(async (): Promise<void> => {
 			</section>
 		</div>
 		<Toolbar class="controls">
+			<template #start>
+				<Button @click="onMeetingIdButtonClick" severity="info" label="Copy ID"/>
+			</template>
 			<template #center>
 				<Button @click="onAudioControlClick" icon="pi pi-microphone" severity="secondary" rounded aria-label="Filter">
 					<template #icon><MicrophoneIcon :is-off="localParticipant.audioTrackMuted ?? false"></MicrophoneIcon></template>

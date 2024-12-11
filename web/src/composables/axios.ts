@@ -13,7 +13,7 @@ export function useAxios(): AxiosInstance {
 		(response: AxiosResponse<unknown>) => response,
 		(error: AxiosResponse<unknown>) => {
 			if (error.status === HttpStatusCode.Unauthorized || error.status === httpStatusCodeTokenMismatch) {
-				router.push({path: 'login'});
+				router.push({path: '/login'});
 			}
 
 			return Promise.reject(error);
