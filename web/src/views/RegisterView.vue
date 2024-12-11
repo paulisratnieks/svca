@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import {reactive} from 'vue';
+import {reactive, ref, type Ref} from 'vue';
 import {type AxiosError, type AxiosResponse, HttpStatusCode} from 'axios';
-import {useCurrentUserStore} from '@/stores/current-user';
+import {useAuth} from '@/stores/auth';
 import router from '@/router';
 import {useAxios} from '@/composables/axios';
 import InputText from 'primevue/inputtext';
@@ -10,9 +10,10 @@ import Button from 'primevue/button';
 import FloatLabel from 'primevue/floatlabel';
 import {useToast} from 'primevue/usetoast';
 
-const currentUser = useCurrentUserStore();
+const auth = useAuth();
 const toast = useToast();
 
+const loading: Ref<boolean> = ref(false);
 const form: Record<string, { value: string, error?: string }> = reactive({
 	name: {
 		value: '',
@@ -36,10 +37,16 @@ function registerRequestBody(): Record<string, string> {
 	}, {})
 }
 
+function onLogInButtonClick(): void {
+	router.push({path: '/login'});
+}
+
 function onSignUpButtonClick(): void {
+	loading.value = true;
+	Object.keys(form).forEach((field) => form[field].error = '');
 	useAxios().get('sanctum/csrf-cookie')
 		.then((): Promise<AxiosResponse<{ message: string }>> => useAxios().post('register', registerRequestBody()))
-		.then((): Promise<void> => currentUser.fetch())
+		.then((): Promise<void> => auth.fetch())
 		.then((): void => {
 			toast.add({ severity: 'success', summary: 'Signup page', detail: 'Signup successful', life: 3000 });
 			router.push({path: '/'})
@@ -51,6 +58,9 @@ function onSignUpButtonClick(): void {
 				});
 			}
 		})
+		.finally(() => {
+			loading.value = false;
+		});
 }
 </script>
 
@@ -82,9 +92,13 @@ function onSignUpButtonClick(): void {
 						<small v-if="form.password.error">{{ form.password.error }}</small>
 					</div>
 					<Button
+						:loading="loading"
 						:label="'Sign up'"
 						@click="onSignUpButtonClick">
 					</Button>
+					<div class="log-in">Already have an account?
+						<Button variant="link" label="Log In" @click="onLogInButtonClick"></Button>
+					</div>
 				</div>
 			</template>
 		</Card>
@@ -114,6 +128,14 @@ main {
 
 			small {
 				color: $color-red;
+			}
+		}
+
+		.log-in {
+			margin: 0 auto;
+
+			:deep(.p-button) {
+				padding: 0;
 			}
 		}
 	}

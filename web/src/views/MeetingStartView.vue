@@ -8,7 +8,10 @@ import Card from "primevue/card"
 import InputText from 'primevue/inputtext';
 import Divider from 'primevue/divider';
 import FloatLabel from 'primevue/floatlabel';
+import DashboardLayout from '@/layouts/DashboardLayout.vue';
 
+const createButtonLoading: Ref<boolean> = ref(false);
+const joinButtonLoading: Ref<boolean> = ref(false);
 const meetingId: Ref<string> = ref('');
 const showMeetingIdError: Ref<boolean> = ref(false);
 
@@ -17,14 +20,20 @@ const isMeetingIdFieldFilled: ComputedRef<boolean> = computed((): boolean => {
 });
 
 function onCreateMeetingButtonClick(): void {
+	createButtonLoading.value = true;
+
 	useAxios().post('meetings')
 		.then((response: AxiosResponse<{ id: string }>): void => {
 			redirectToMeeting(response.data.id)
+		})
+		.finally(() => {
+			createButtonLoading.value = false;
 		});
 }
 
 function onJoinMeetingButtonClick(): void {
 	showMeetingIdError.value = false;
+	joinButtonLoading.value = true;
 
 	useAxios().get('meetings/' + meetingId.value)
 		.then((response: AxiosResponse): void => {
@@ -37,6 +46,9 @@ function onJoinMeetingButtonClick(): void {
 				showMeetingIdError.value = true;
 			}
 		})
+		.finally(() => {
+			joinButtonLoading.value = false;
+		});
 }
 
 function redirectToMeeting(id: string): void {
@@ -45,38 +57,43 @@ function redirectToMeeting(id: string): void {
 </script>
 
 <template>
-	<main>
-		<Card>
-			<template #content>
-				<div class="card-content">
-					<div class="form-field">
-						<FloatLabel variant="on">
-							<InputText id="meeting-id" v-model="meetingId"></InputText>
-							<label for="meeting-id">Meeting ID</label>
-						</FloatLabel>
-						<small v-if="showMeetingIdError">A meeting with the provided ID does not exist</small>
+	<DashboardLayout>
+		<div class="view">
+			<Card>
+				<template #content>
+					<div class="card-content">
+						<div class="form-field">
+							<FloatLabel variant="on">
+								<InputText id="meeting-id" v-model="meetingId"></InputText>
+								<label for="meeting-id">Meeting ID</label>
+							</FloatLabel>
+							<small v-if="showMeetingIdError">A meeting with the provided ID does not exist</small>
+						</div>
+						<Button
+							:loading="joinButtonLoading"
+							:disabled="!isMeetingIdFieldFilled"
+							:label="'Join meeting'"
+							@click="onJoinMeetingButtonClick">
+						</Button>
+						<Divider layout="horizontal" class=""><b>OR</b></Divider>
+						<Button
+							:loading="createButtonLoading"
+							:label="'Create meeting'"
+							@click="onCreateMeetingButtonClick">
+						</Button>
 					</div>
-					<Button
-						:disabled="!isMeetingIdFieldFilled"
-						:label="'Join meeting'"
-						@click="onJoinMeetingButtonClick">
-					</Button>
-					<Divider layout="horizontal" class=""><b>OR</b></Divider>
-					<Button
-						:label="'Create meeting'"
-						@click="onCreateMeetingButtonClick">
-					</Button>
-				</div>
-			</template>
-		</Card>
-	</main>
+				</template>
+			</Card>
+		</div>
+	</DashboardLayout>
 </template>
 
 <style lang="scss" scoped>
-main {
-	padding-top: 64px;
+.view {
+	padding-top: 5%;
 	margin: 0 auto;
 	max-width: 400px;
+	width: 100%;
 
 	.card-content {
 		display: flex;

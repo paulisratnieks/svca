@@ -5,7 +5,7 @@ import Button from 'primevue/button';
 import {computed, nextTick, onMounted, ref, type Ref} from 'vue';
 import {createLocalAudioTrack, createLocalTracks, createLocalVideoTrack, LocalTrack, Track} from 'livekit-client';
 import router from '@/router';
-import {useCurrentUserStore} from '@/stores/current-user';
+import {useAuth} from '@/stores/auth';
 import VideoWindow from '@/components/VideoWindow.vue';
 import {useRoute} from 'vue-router';
 import {useSettingsStore} from '@/stores/settings';
@@ -14,7 +14,7 @@ import {useToast} from 'primevue/usetoast';
 const route = useRoute();
 const toast = useToast();
 const settings = useSettingsStore();
-const currentUser = useCurrentUserStore();
+const auth = useAuth();
 
 const tracks: Ref<LocalTrack[]> = ref([]);
 
@@ -65,7 +65,7 @@ function onCancelButtonClick(): void {
 }
 
 function onJoinButtonClick(): void {
-	router.push({path: '/meetings/' + meetingId.value});
+	router.replace({path: '/meetings/' + meetingId.value});
 }
 
 onMounted(() => {
@@ -84,10 +84,10 @@ onMounted(() => {
 		<div class="row">
 			<div class="video-window">
 				<VideoWindow
-					v-if="currentUser.user"
+					v-if="auth.user"
 					:audio-track="trackByKind(Track.Kind.Audio)"
 					:video-track="trackByKind(Track.Kind.Video)"
-					:user="currentUser.user"
+					:user="auth.user"
 				></VideoWindow>
 			</div>
 			<div class="media-controls">
