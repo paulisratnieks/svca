@@ -7,7 +7,6 @@ use App\Models\Recording;
 use App\Models\User;
 use Database\Seeders\UserWithInactiveRecordingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -20,22 +19,22 @@ class RecordingDeleteTest extends TestCase
         $user = User::factory()->create();
         $meeting = Meeting::factory()
             ->create();
-        $recording = Recording::factory()
+        $recordings = Recording::factory()
+            ->count(2)
             ->state(['active' => false])
             ->for($user)
             ->for($meeting)
             ->create();
         $user->meetings()->attach($meeting);
         Storage::fake('recordings');
-        Storage::disk('recordings')->put($recording->file_name, fake()->text);
-
+        $recordings->each(fn(Recording $recording) => Storage::disk('recordings')->put($recording->file_name, fake()->text));
 
         $this
             ->actingAs($user)
-            ->delete('/recordings/' . $recording->id)
+            ->delete('/recordings?' . http_build_query(['ids' => $recordings->pluck('id')->toArray()]))
             ->assertNoContent();
         $this->assertDatabaseMissing('recordings');
-        Storage::disk('recordings')->assertMissing($recording->file_name);
+        $recordings->each(fn(Recording $recording) => Storage::disk('recordings')->assertMissing($recording->file_name));
     }
 
     public function test_when_user_request_recording_delete_to_active_recording_then_not_found_returned(): void
@@ -52,7 +51,7 @@ class RecordingDeleteTest extends TestCase
         Storage::disk('recordings')->put($recording->file_name, fake()->text);
 
         $this->actingAs($user)
-            ->delete('recordings/' . $recording->id)
+            ->delete('/recordings?' . http_build_query(['ids' => [$recording->id]]))
             ->assertNotFound();
         $this->assertDatabaseHas('recordings');
         Storage::disk('recordings')->assertExists($recording->file_name);
@@ -63,7 +62,7 @@ class RecordingDeleteTest extends TestCase
         [$user, $recording] = app(UserWithInactiveRecordingSeeder::class)->run();
 
         $this->actingAs(User::factory()->create())
-            ->delete('recordings/' . $recording->id)
+            ->delete('/recordings?' . http_build_query(['ids' => [$recording->id]]))
             ->assertNotFound();
         $this->assertDatabaseHas('recordings');
         Storage::disk('recordings')->assertExists($recording->file_name);

@@ -33,7 +33,7 @@ class AuthenticationTest extends TestCase
         $this->postJson('/login', [
             'email' => $user->email,
             'password' => 'incorrect_password',
-        ])->assertStatus(401);
+        ])->assertUnauthorized();
     }
 
     public function test_user_can_register_with_valid_credentials(): void
@@ -66,5 +66,17 @@ class AuthenticationTest extends TestCase
             'email' => 'The email has already been taken.',
             'password' => 'The password field must be at least 10 characters.',
         ]);
+    }
+
+    public function test_when_user_requests_logout_then_user_is_logged_out_and_cant_access_authenticated_routes(): void
+    {
+        $this->be(User::factory()->create());
+
+        $this->getJson('recordings')
+            ->assertSuccessful();
+        $this->getJson('/logout')
+            ->assertSuccessful();
+        $this->getJson('recordings')
+            ->assertUnauthorized();
     }
 }

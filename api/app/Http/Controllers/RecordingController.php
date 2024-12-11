@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Agence104\LiveKit\EgressServiceClient;
+use App\Http\Requests\RecordingDestroyRequest;
 use App\Http\Requests\RecordingStoreRequest;
 use App\Http\Resources\RecordingResource;
 use App\Models\Recording;
@@ -104,12 +105,19 @@ class RecordingController extends Controller
         return response()->noContent();
     }
 
-    public function destroy(Recording $recording, Authenticatable $user): Response
+    public function destroy(RecordingDestroyRequest $recording, Authenticatable $user): Response
     {
-        abort_if($user->cannot('delete', $recording), ResponseAlias::HTTP_NOT_FOUND);
+        $recordings = Recording::whereIn('id', $recording->validated('ids'))->get();
 
-        $this->filesystem->delete($recording->file_name);
-        $recording->delete();
+        abort_if(
+            $recordings->some(fn(Recording $recording): bool => $user->cannot('delete', $recording)),
+            ResponseAlias::HTTP_NOT_FOUND
+        );
+
+        $recordings->each(function (Recording $recording): void {
+            $this->filesystem->delete($recording->file_name);
+            $recording->delete();
+        });
 
         return response()->noContent();
     }

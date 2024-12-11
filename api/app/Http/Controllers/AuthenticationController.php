@@ -42,4 +42,11 @@ class AuthenticationController extends Controller
 
         return response()->json(status: Response::HTTP_CREATED);
     }
+
+    public function logout(): \Illuminate\Http\Response
+    {
+        Auth::logout();
+
+        return response()->noContent();
+    }
 }
