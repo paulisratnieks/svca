@@ -21,6 +21,14 @@ class MeetingFactory extends Factory
         return [
             'id' => fake()->uuid(),
             'user_id' => User::first()->id,
+            'deleted_at' => null,
         ];
+    }
+
+    public function trashed(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'deleted_at' => now(),
+        ]);
     }
 }

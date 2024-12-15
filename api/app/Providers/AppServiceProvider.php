@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Agence104\LiveKit\AccessToken;
 use Agence104\LiveKit\EgressServiceClient;
+use Agence104\LiveKit\RoomServiceClient;
+use App\Console\Commands\RoomClient;
 use App\Http\Controllers\RecordingController;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Storage;
@@ -24,6 +26,12 @@ class AppServiceProvider extends ServiceProvider
         ));
 
         $this->app->bind(EgressServiceClient::class, fn(): EgressServiceClient => new EgressServiceClient(
+            (string) env('LIVEKIT_URL'),
+            (string) env('LIVEKIT_API_KEY'),
+            (string) env('LIVEKIT_API_SECRET'),
+        ));
+
+        $this->app->bind(RoomServiceClient::class, fn(): RoomServiceClient => new RoomServiceClient(
             (string) env('LIVEKIT_URL'),
             (string) env('LIVEKIT_API_KEY'),
             (string) env('LIVEKIT_API_SECRET'),

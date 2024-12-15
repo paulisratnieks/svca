@@ -11,3 +11,5 @@ parameters:
 	ignoreErrors:
 	    - '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::once\(\).#'
 	    - '#Parameter \#1 \$var of method Livekit\\EgressInfo::setFileResults\(\) expects Google\\Protobuf\\Internal\\RepeatedField&iterable<Livekit\\FileInfo>, array<int, Livekit\\FileInfo> given.#'
+	    - '#Parameter \#1 \$var of method Livekit\\ListRoomsResponse::setRooms\(\) expects Google\\Protobuf\\Internal\\RepeatedField&iterable<Livekit\\Room>, array<int, Livekit\\Room> given.#'
+	    - '#Cannot call method assertExitCode\(\) on Illuminate\\Testing\\PendingCommand\|int.#'
