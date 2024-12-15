@@ -13,6 +13,7 @@ return new class extends Migration {
         Schema::create('meetings', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->unsignedBigInteger('user_id')->constrained();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
