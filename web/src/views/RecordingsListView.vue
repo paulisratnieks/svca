@@ -11,6 +11,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue';
 import Button from 'primevue/button';
 import Toolbar from 'primevue/toolbar';
 import {useToast} from 'primevue/usetoast';
+import {useAuth} from '@/stores/auth';
 
 const store = useRecordingsStore();
 const toast = useToast();
@@ -72,13 +73,21 @@ function fetchRecordings(): void {
 		});
 }
 
+function rowClass(row: Recording): string {
+	return row.can_view ? '' : 'disabled';
+}
+
+function canDeleteRecording(recording: Recording): boolean {
+	return useAuth().user!.super_user || recording.is_author;
+}
+
 watch(
 	selectedRecordings,
 	() => {
 		isDeleteButtonDisabled.value = Array.isArray(selectedRecordings.value)
-			? !selectedRecordings.value.every(recording => recording.is_author)
+			? !selectedRecordings.value.every(recording => canDeleteRecording(recording))
 				|| selectedRecordings.value.length === 0
-			: selectedRecordings.value.is_author;
+			: canDeleteRecording(selectedRecordings.value);
 	}
 );
 
@@ -108,6 +117,7 @@ onMounted(() => {
 					:rowsPerPageOptions="rowsPerPageOptions"
 					:loading="loading"
 					:rows="10"
+					:rowClass="rowClass"
 					v-model:selection="selectedRecordings"
 					paginator
 					tableStyle="min-width: 50rem"
@@ -115,7 +125,7 @@ onMounted(() => {
 					dataKey="id"
 					@rowClick="onRowClick"
 				>
-					<Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
+					<Column class="select" selectionMode="multiple" headerStyle="width: 3rem"></Column>
 					<Column v-for="column of columns" :key="column.field" :field="column.field" :header="column.header"></Column>
 				</DataTable>
 			</div>
@@ -127,6 +137,17 @@ onMounted(() => {
 .view {
 	.table {
 		padding: 16px;
+
+		:deep(.disabled td:not(.select)) {
+			pointer-events: none;
+			cursor: auto;
+			user-select: none;
+			opacity: var(--p-disabled-opacity);
+		}
+
+		:deep(.disabled .select .p-checkbox-input:hover) {
+			cursor: pointer;
+		}
 	}
 }
 </style>

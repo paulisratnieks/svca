@@ -50,13 +50,17 @@ function onBackButtonClick(): void {
 	router.back();
 }
 
+function redirectToRecordingsListView(): void {
+	router.push({path: '/recordings'});
+}
+
 function onDeleteButtonClick(): void {
 	deleteButtonLoading.value = true;
 	useAxios().delete(recordingsBaseRoute, {params: {ids: [recording.value!.id]}})
 		.then(() => {
 			store.recordings.slice(store.recordings.findIndex(recording => recording.id === recording!.id));
 			toast.add({ severity: 'success', summary: 'Recording page', detail: 'Recording deleted successfully', life: 3000 });
-			router.push({path: '/recordings'});
+			redirectToRecordingsListView();
 		})
 		.catch(() => {
 			toast.add({ severity: 'error', summary: 'Recording page', detail: 'Recording deleted failed', life: 3000 });
@@ -69,7 +73,11 @@ function onDeleteButtonClick(): void {
 onMounted(() => {
 	if (!recording.value) {
 		toast.add({ severity: 'error', summary: 'Recording page', detail: 'Recording not found', life: 3000 });
-		router.push({path: '/recordings'});
+		redirectToRecordingsListView();
+	}
+	if (!recording.value!.can_view) {
+		toast.add({ severity: 'error', summary: 'Recording page', detail: 'You are not authorized to view the recording', life: 3000 });
+		redirectToRecordingsListView();
 	}
 });
 </script>
