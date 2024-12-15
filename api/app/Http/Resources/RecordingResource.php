@@ -17,6 +17,7 @@ class RecordingResource extends JsonResource
         return [
             'id' => $this->id,
             'is_author' => $this->user_id === auth()->id(),
+            'can_view' => auth()->user()?->can('view', $this->resource),
             'file_name' => $this->file_name,
             'created_at' => $this->created_at,
         ];

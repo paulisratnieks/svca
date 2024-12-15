@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\ViewableScope;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -17,6 +18,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property bool $super_user
  * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $remember_token
@@ -58,6 +60,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'super_user',
     ];
 
     /**
@@ -80,6 +83,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'super_user' => 'bool',
         ];
     }
 

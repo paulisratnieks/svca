@@ -57,4 +57,17 @@ class RecordingIndexTest extends TestCase
             ->assertSuccessful()
             ->assertJsonCount(0, 'data');
     }
+
+    public function test_when_user_is_super_user_then_user_can_list_all_recordings(): void
+    {
+        Recording::factory()
+            ->inactive()
+            ->state(['user_id' => User::factory()->create()->id])
+            ->create();
+
+        $this->actingAs(User::factory()->superUser()->create())
+            ->get('recordings')
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data');
+    }
 }
