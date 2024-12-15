@@ -67,4 +67,15 @@ class RecordingDeleteTest extends TestCase
         $this->assertDatabaseHas('recordings');
         Storage::disk('recordings')->assertExists($recording->file_name);
     }
+
+    public function test_when_super_user_request_recording_delete_to_recording_that_doesnt_belong_to_user_then_see_recording_successfully_deleted(): void
+    {
+        [$user, $recording] = app(UserWithInactiveRecordingSeeder::class)->run();
+
+        $this->actingAs(User::factory()->superUser()->create())
+            ->delete('/recordings?' . http_build_query(['ids' => [$recording->id]]))
+            ->assertSuccessful();
+        $this->assertDatabaseMissing('recordings');
+        Storage::disk('recordings')->assertMissing($recording->file_name);
+    }
 }

@@ -35,7 +35,7 @@ class MediaTokenController extends Controller
             ->toJwt();
 
         $meeting->participants()
-            ->sync([auth()->id()]);
+            ->attach(auth()->id());
 
         return response()->json([
             'data' => $token,

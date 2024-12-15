@@ -92,4 +92,14 @@ class Recording extends Model
     {
         $query->where('user_id', auth()->id());
     }
+
+    /**
+     * @param Builder<self> $query
+     */
+    public function scopeViewableByMe(Builder $query): void
+    {
+        if (auth()->user()?->cannot('viewAny', Recording::class)) {
+            $query->whereIn('id', once(fn() => auth()->user()->recordings->pluck('id')));
+        }
+    }
 }

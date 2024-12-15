@@ -184,9 +184,8 @@ onUnmounted(() => {
 				</div>
 			</template>
 		</div>
-		<div class="paginator-container">
+		<div class="paginator-container" v-if="isPaginatorVisible">
 			<Paginator
-				v-if="isPaginatorVisible"
 				class="paginator"
 				v-model:first="firstRecordCountInPage"
 				:rows="maxVideoCountPerPage"

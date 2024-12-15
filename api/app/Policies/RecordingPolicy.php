@@ -7,6 +7,11 @@ use App\Models\User;
 
 class RecordingPolicy
 {
+    public function viewAny(User $user): bool
+    {
+        return $user->super_user;
+    }
+
     public function view(User $user, Recording $recording): bool
     {
         return $user->recordings->contains($recording)
@@ -21,7 +26,7 @@ class RecordingPolicy
 
     public function delete(User $user, Recording $recording): bool
     {
-        return $recording->user_id === $user->id
-            && $recording->active === false;
+        return $user->super_user ||
+            ($recording->user_id === $user->id && $recording->active === false);
     }
 }

@@ -32,9 +32,14 @@ class RecordingController extends Controller
         private readonly Filesystem $filesystem,
     ) {}
 
-    public function index(Authenticatable $user): AnonymousResourceCollection
+    public function index(): AnonymousResourceCollection
     {
-        return RecordingResource::collection($user->recordings()->inactive()->get());
+        return RecordingResource::collection(
+            Recording::query()
+                ->viewableByMe()
+                ->inactive()
+                ->get()
+        );
     }
 
     public function show(Recording $recording, Authenticatable $user): StreamedResponse
@@ -105,11 +110,12 @@ class RecordingController extends Controller
         return response()->noContent();
     }
 
-    public function destroy(RecordingDestroyRequest $recording, Authenticatable $user): Response
+    public function destroy(RecordingDestroyRequest $request, Authenticatable $user): Response
     {
-        $recordings = Recording::whereIn('id', $recording->validated('ids'))->get();
+        $recordings = Recording::whereIn('id', $request->validated('ids'))->get();
 
         abort_if(
+            $recordings->isEmpty() ||
             $recordings->some(fn(Recording $recording): bool => $user->cannot('delete', $recording)),
             ResponseAlias::HTTP_NOT_FOUND
         );

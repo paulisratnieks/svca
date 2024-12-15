@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, type ComputedRef, onMounted, reactive, ref, type Ref} from 'vue';
+import {computed, type ComputedRef, onMounted, onUnmounted, reactive, ref, type Ref} from 'vue';
 import {useRoute} from 'vue-router';
 import {
 	type ChatMessage,
@@ -19,6 +19,7 @@ import {useAxios} from '@/composables/axios';
 import type {User} from '@/types/user';
 import type {Message} from '@/types/message';
 import Toolbar from 'primevue/toolbar';
+import ProgressSpinner from 'primevue/progressspinner';
 import Button from 'primevue/button';
 import MeetingSidebar from '@/components/MeetingSidebar.vue';
 import VideoWindowLayout from '@/components/VideoWindowLayout.vue';
@@ -54,6 +55,7 @@ const room = new Room({
 const messages: Ref<Message[]> = ref([]);
 const selectedTabId: Ref<TabNames> = ref(TabNames.Chat);
 const isSidebarVisible: Ref<boolean> = ref(false);
+const loading: Ref<boolean> = ref(true);
 
 const meetingId: Ref<string> = computed((): string => {
 	return route.params.meetingId as string;
@@ -425,24 +427,34 @@ onMounted(async (): Promise<void> => {
 	attachRoomEventHandlers();
 
 	await updateRoomLocalParticipant();
+	loading.value = false;
+});
+
+onUnmounted(() => {
+	room.disconnect();
 });
 </script>
 
 <template>
 	<main>
-		<div class="row">
-			<VideoWindowLayout
-				:participants="participantsWithTracks"
-			></VideoWindowLayout>
-			<section class="sidebar" v-if="isSidebarVisible">
-				<MeetingSidebar
-					:messages="messages"
+		<div class="row" :class="{loading: loading}">
+			<template v-if="loading">
+				<ProgressSpinner></ProgressSpinner>
+			</template>
+			<template v-else>
+				<VideoWindowLayout
 					:participants="participantsWithTracks"
-					v-model="selectedTabId"
-					@message-created="onMessageCreated"
-					@close="onSidebarClose"
-				></MeetingSidebar>
-			</section>
+				></VideoWindowLayout>
+				<section class="sidebar" v-if="isSidebarVisible">
+					<MeetingSidebar
+						:messages="messages"
+						:participants="participantsWithTracks"
+						v-model="selectedTabId"
+						@message-created="onMessageCreated"
+						@close="onSidebarClose"
+					></MeetingSidebar>
+				</section>
+			</template>
 		</div>
 		<Toolbar class="controls">
 			<template #start>
@@ -489,6 +501,10 @@ main {
 
 		section.sidebar {
 			width: 25%;
+		}
+
+		&.loading {
+			align-items: center;
 		}
 	}
 
