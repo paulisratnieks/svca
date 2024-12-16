@@ -425,7 +425,6 @@ onMounted(async (): Promise<void> => {
 
 	setupCurrentRoomState();
 	attachRoomEventHandlers();
-
 	await updateRoomLocalParticipant();
 	loading.value = false;
 });
@@ -462,10 +461,10 @@ onUnmounted(() => {
 			</template>
 			<template #center>
 				<Button @click="onAudioControlClick" icon="pi pi-microphone" severity="secondary" rounded aria-label="Filter">
-					<template #icon><MicrophoneIcon :is-off="localParticipant.audioTrackMuted ?? false"></MicrophoneIcon></template>
+					<template #icon><MicrophoneIcon :is-off="localParticipant.audioTrack?.isMuted ?? localParticipant.audioTrackMuted ?? true"></MicrophoneIcon></template>
 				</Button>
 				<Button @click="onCameraControlClick" icon="pi pi-camera" severity="secondary" rounded aria-label="Filter">
-					<template #icon><CameraIcon :is-off="localParticipant.videoTrackMuted ?? false"></CameraIcon></template>
+					<template #icon><CameraIcon :is-off="localParticipant.videoTrack?.isMuted ?? localParticipant.videoTrackMuted ?? true"></CameraIcon></template>
 				</Button>
 				<Button @click="onMessageControlClick" icon="pi pi-th-large" severity="secondary" rounded aria-label="Filter">
 					<template #icon><ChatIcon /></template>

@@ -26,7 +26,7 @@ function render(props: Record<string, unknown>): VueWrapper<MeetingSidebar> {
 			global: {
 				plugins: [createTestingPinia({
 					createSpy: vi.fn,
-					initialState: {'current-user': {user: authenticatedUser}}
+					initialState: {'auth': {user: authenticatedUser}}
 				})]
 			}
 		}

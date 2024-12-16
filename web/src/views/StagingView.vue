@@ -86,7 +86,9 @@ onMounted(() => {
 				<VideoWindow
 					v-if="auth.user"
 					:audio-track="trackByKind(Track.Kind.Audio)"
+					:audio-track-muted="trackByKind(Track.Kind.Audio)?.isMuted ?? true"
 					:video-track="trackByKind(Track.Kind.Video)"
+					:video-track-muted="trackByKind(Track.Kind.Video)?.isMuted ?? true"
 					:user="auth.user"
 				></VideoWindow>
 			</div>
