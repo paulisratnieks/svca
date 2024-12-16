@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type {User} from '@/types/user';
 import type {Track} from 'livekit-client';
-import {computed, onMounted, type Ref, useTemplateRef, watch} from 'vue';
+import {computed, onMounted, onUnmounted, type Ref, useTemplateRef, watch} from 'vue';
 import ParticipantLogo from '@/components/ParticipantLogo.vue';
 import ParticipantLabel from '@/components/ParticipantLabel.vue';
 
@@ -58,6 +58,17 @@ onMounted(() => {
 		attachTrackToVideo(props.videoTrack)
 	}
 });
+
+onUnmounted(() => {
+	if (props.audioTrack) {
+		props.audioTrack.detach();
+		props.audioTrack.stop();
+	}
+	if (props.videoTrack) {
+		props.videoTrack.detach();
+		props.videoTrack.stop();
+	}
+})
 </script>
 
 <template>
@@ -67,11 +78,11 @@ onMounted(() => {
 		<video ref="video" class="active-speaker" autoplay playsinline></video>
 		<ParticipantLabel
 			:name="user.name"
-			:isTrackMuted="audioTrack?.isMuted ?? false"
+			:isTrackMuted="audioTrackMuted ?? audioTrack?.isMuted ?? true"
 		></ParticipantLabel>
 		<ParticipantLogo
 			:name="user.name"
-			v-if="videoTrack?.isMuted ?? false"
+			v-if="videoTrackMuted ?? videoTrack?.isMuted ?? true"
 		></ParticipantLogo>
 	</div>
 </template>
