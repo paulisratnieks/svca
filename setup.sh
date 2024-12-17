@@ -45,9 +45,6 @@ done
 
 docker exec -it "$container_id" sh -c 'php artisan key:generate; php artisan migrate --no-interaction; php artisan make:super-user'
 
-
-docker run -ti --rm -w /certs -v $(pwd)/docker/web/certs:/certs alpine/mkcert -cert-file "${domain}.pem" -key-file "${domain}-key.pem" "${domain}" "livekit.${domain}" "api.${domain}"
-
 cp ./docker/web/default.example.conf ./docker/web/default.conf
 sed -i "s/domain_placeholder/${domain}/g" ./docker/web/default.conf
 
