@@ -43,9 +43,9 @@ while [ -z "$container_id" ]; do
   fi
 done
 
-docker exec -it "$container_id" sh -c 'php artisan key:generate; php artisan migrate --no-interaction; php artisan make:super-user'
+docker exec -it "$container_id" sh -c 'php artisan key:generate; php artisan migrate --force; php artisan make:super-user'
 
 cp ./docker/web/default.example.conf ./docker/web/default.conf
 sed -i "s/domain_placeholder/${domain}/g" ./docker/web/default.conf
 
-docker compose up -d
+echo "Setup complete"
