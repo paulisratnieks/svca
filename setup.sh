@@ -1,6 +1,7 @@
 #!/bin/sh
 
 cp ./api/.env.example ./api/.env
+cp ./web/.env.example ./web/.env
 cp ./docker/livekit/livekit.example.yaml ./docker/livekit/livekit.yaml
 cp ./docker/livekit/egress.example.yaml ./docker/livekit/egress.yaml
 
@@ -8,16 +9,27 @@ docker compose up livekit redis -d
 docker exec -it $(docker ps -a --filter "ancestor=livekit/livekit-server:v1.8.0" --format "{{.ID}}") sh -c './livekit-server generate-keys' > keys.tmp
 docker compose down
 
-API_KEY=$(grep -o 'API Key:  [^ ]*' keys.tmp | awk '{print $3}' | tr -d '\r\n')
-API_SECRET=$(grep -o 'API Secret:  [^ ]*' keys.tmp | awk '{print $3}'| tr -d '\r\n')
+api_key=$(grep -o 'API Key:  [^ ]*' keys.tmp | awk '{print $3}' | tr -d '\r\n')
+api_secret=$(grep -o 'API Secret:  [^ ]*' keys.tmp | awk '{print $3}'| tr -d '\r\n')
 rm keys.tmp
 
-sed -i "s/^LIVEKIT_API_KEY=.*/LIVEKIT_API_KEY=${API_KEY}/" ./api/.env
-sed -i "s/^LIVEKIT_API_SECRET=.*/LIVEKIT_API_SECRET=${API_SECRET}/" ./api/.env
-sed -i "s/^api_key:.*/api_key: ${API_KEY}/" ./docker/livekit/egress.yaml
-sed -i "s/^api_secret:.*/api_secret: ${API_SECRET}/" ./docker/livekit/egress.yaml
-sed -i "s/key_placeholder/${API_KEY}/" ./docker/livekit/livekit.yaml
-sed -i "s/value_placeholder/${API_SECRET}/" ./docker/livekit/livekit.yaml
+echo -n "Enter the domain the app will be using: "
+read domain
+
+sed -i "s/^LIVEKIT_API_KEY=.*/LIVEKIT_API_KEY=${api_key}/" ./api/.env
+sed -i "s/^LIVEKIT_API_SECRET=.*/LIVEKIT_API_SECRET=${api_secret}/" ./api/.env
+sed -i "s/^APP_URL=.*/APP_URL=https:\/\/${domain}/" ./api/.env
+sed -i "s/^SESSION_DOMAIN=.*/SESSION_DOMAIN=.${domain}/" ./api/.env
+sed -i "s/^SANCTUM_STATEFUL_DOMAINS=.*/SANCTUM_STATEFUL_DOMAINS=${domain}:*/" ./api/.env
+
+sed -i "s/^VITE_API_URL=.*/VITE_API_URL=https:\/\/${domain}/" ./web/.env
+sed -i "s/^VITE_LIVEKIT_API_URL=.*/VITE_LIVEKIT_API_URL=wss:\/\/livekit.${domain}/" ./web/.env
+
+sed -i "s/^api_key:.*/api_key: ${api_key}/" ./docker/livekit/egress.yaml
+sed -i "s/^api_secret:.*/api_secret: ${api_secret}/" ./docker/livekit/egress.yaml
+
+sed -i "s/key_placeholder/${api_key}/" ./docker/livekit/livekit.yaml
+sed -i "s/value_placeholder/${api_secret}/" ./docker/livekit/livekit.yaml
 
 docker compose --env-file ./api/.env up php mysql -d
 
@@ -32,8 +44,6 @@ done
 
 docker exec -it "$container_id" sh -c 'php artisan key:generate; php artisan migrate --no-interaction; php artisan make:super-user'
 
-echo -n "Enter the domain the app will be using: "
-read domain
 
 docker run -ti --rm -w /certs -v $(pwd)/docker/web/certs:/certs alpine/mkcert -cert-file "${domain}.pem" -key-file "${domain}-key.pem" "${domain}" "livekit.${domain}" "api.${domain}"
 
