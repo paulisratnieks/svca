@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cp ./api/.env.example ./api/env
+cp ./api/.env.example ./api/.env
 cp ./docker/livekit/livekit.example.yaml ./docker/livekit/livekit.yaml
 cp ./docker/livekit/egress.example.yaml ./docker/livekit/egress.yaml
 
@@ -19,7 +19,25 @@ sed -i "s/^api_secret:.*/api_secret: ${API_SECRET}/" ./docker/livekit/egress.yam
 sed -i "s/key_placeholder/${API_KEY}/" ./docker/livekit/livekit.yaml
 sed -i "s/value_placeholder/${API_SECRET}/" ./docker/livekit/livekit.yaml
 
-docker compose up php mysql -d
-docker exec -it $(docker ps -a --filter "ancestor=svca-php" --format "{{.ID}}") sh -c 'php artisan key:generate; php artisan make:super-user'
+docker compose --env-file ./api/.env up php mysql -d
+
+container_id = ''
+while [ -z "$container_id" ]; do
+  container_id=$(sudo docker ps -a -f ancestor=svca-php -f health=healthy --format "{{.ID}}")
+  if [ -z "$container_id" ]; then
+    echo "Waiting for mysql container to fully initialize"
+    sleep 2
+  fi
+done
+
+docker exec -it "$container_id" sh -c 'php artisan key:generate; php artisan migrate --no-interaction; php artisan make:super-user'
+
+echo -n "Enter the domain the app will be using: "
+read domain
+
+docker run -ti --rm -w /certs -v $(pwd)/docker/web/certs:/certs alpine/mkcert -cert-file "${domain}.pem" -key-file "${domain}-key.pem" "${domain}" "livekit.${domain}" "api.${domain}"
+
+cp ./docker/web/default.example.conf ./docker/web/default.conf
+sed -i "s/domain_placeholder/${domain}/g" ./docker/web/default.conf
 
 docker compose up -d

@@ -28,12 +28,8 @@ services:
       dockerfile: docker/web/Dockerfile
     volumes:
       - ./docker/web/default.conf:/etc/nginx/conf.d/default.conf
-      - ./docker/web/certs/svca.local.pem:/etc/nginx/ssl/svca.local.pem
-      - ./docker/web/certs/svca.local-key.pem:/etc/nginx/ssl/svca.local-key.pem
-      - ./docker/web/certs/api.svca.local.pem:/etc/nginx/ssl/api.svca.local.pem
-      - ./docker/web/certs/api.svca.local-key.pem:/etc/nginx/ssl/api.svca.local-key.pem
-      - ./docker/web/certs/livekit.svca.local.pem:/etc/nginx/ssl/livekit.svca.local.pem
-      - ./docker/web/certs/livekit.svca.local-key.pem:/etc/nginx/ssl/livekit.svca.local-key.pem
+      - ./docker/certbot/www/:/var/www/certbot/
+      - ./docker/certbot/certs/:/etc/nginx/ssl/
     restart: always
     ports:
       - 80:80
@@ -43,6 +39,9 @@ services:
       context: .
       dockerfile: docker/api/Dockerfile
     network_mode: "host"
+    depends_on:
+      mysql:
+        condition: service_healthy
     volumes:
       - ./api/storage/app/private/recordings:/var/www/html/storage/app/private/recordings
   mysql:
@@ -59,6 +58,11 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     network_mode: "host"
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      interval: 2s
+      timeout: 20s
+      retries: 10
 
 volumes:
   redis_data:
