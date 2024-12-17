@@ -18,7 +18,7 @@ read domain
 
 sed -i "s/^LIVEKIT_API_KEY=.*/LIVEKIT_API_KEY=${api_key}/" ./api/.env
 sed -i "s/^LIVEKIT_API_SECRET=.*/LIVEKIT_API_SECRET=${api_secret}/" ./api/.env
-sed -i "s/^LIVEKIT_URL=.*/LIVEKIT_URL=wss:\/\/livekit.${domain}/" ./api/.env
+sed -i "s/^LIVEKIT_URL=.*/LIVEKIT_URL=https:\/\/livekit.${domain}/" ./api/.env
 sed -i "s/^APP_URL=.*/APP_URL=https:\/\/${domain}/" ./api/.env
 sed -i "s/^SESSION_DOMAIN=.*/SESSION_DOMAIN=.${domain}/" ./api/.env
 sed -i "s/^SANCTUM_STATEFUL_DOMAINS=.*/SANCTUM_STATEFUL_DOMAINS=${domain}/" ./api/.env
