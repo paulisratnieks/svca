@@ -18,11 +18,12 @@ read domain
 
 sed -i "s/^LIVEKIT_API_KEY=.*/LIVEKIT_API_KEY=${api_key}/" ./api/.env
 sed -i "s/^LIVEKIT_API_SECRET=.*/LIVEKIT_API_SECRET=${api_secret}/" ./api/.env
+sed -i "s/^LIVEKIT_URL=.*/LIVEKIT_URL=wss:\/\/livekit.${domain}/" ./api/.env
 sed -i "s/^APP_URL=.*/APP_URL=https:\/\/${domain}/" ./api/.env
 sed -i "s/^SESSION_DOMAIN=.*/SESSION_DOMAIN=.${domain}/" ./api/.env
-sed -i "s/^SANCTUM_STATEFUL_DOMAINS=.*/SANCTUM_STATEFUL_DOMAINS=${domain}:*/" ./api/.env
+sed -i "s/^SANCTUM_STATEFUL_DOMAINS=.*/SANCTUM_STATEFUL_DOMAINS=${domain}/" ./api/.env
 
-sed -i "s/^VITE_API_URL=.*/VITE_API_URL=https:\/\/${domain}/" ./web/.env
+sed -i "s/^VITE_API_URL=.*/VITE_API_URL=https:\/\/api.${domain}/" ./web/.env
 sed -i "s/^VITE_LIVEKIT_API_URL=.*/VITE_LIVEKIT_API_URL=wss:\/\/livekit.${domain}/" ./web/.env
 
 sed -i "s/^api_key:.*/api_key: ${api_key}/" ./docker/livekit/egress.yaml
