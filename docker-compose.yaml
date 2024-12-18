@@ -43,6 +43,7 @@ services:
         condition: service_healthy
     volumes:
       - ./api/storage/app/private/recordings:/var/www/html/storage/app/private/recordings
+      - ./api/.env:/var/www/html/.env
   scheduler:
     build:
       context: .
@@ -52,6 +53,8 @@ services:
       test: [ "CMD", "healthcheck-schedule" ]
       start_period: 10s
     network_mode: "host"
+    volumes:
+      - ./api/.env:/var/www/html/.env
   mysql:
     image: mysql/mysql-server:8.0
     ports:
