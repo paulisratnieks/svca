@@ -43,6 +43,14 @@ services:
         condition: service_healthy
     volumes:
       - ./api/storage/app/private/recordings:/var/www/html/storage/app/private/recordings
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    command: [ "php", "/var/www/html/artisan", "schedule:work" ]
+    healthcheck:
+      test: [ "CMD", "healthcheck-schedule" ]
+      start_period: 10s
   mysql:
     image: mysql/mysql-server:8.0
     ports:
