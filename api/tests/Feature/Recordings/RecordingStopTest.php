@@ -1,6 +1,6 @@
 <?php
 
-namespace Recordings;
+namespace Tests\Feature\Recordings;
 
 use Agence104\LiveKit\EgressServiceClient;
 use App\Models\Meeting;

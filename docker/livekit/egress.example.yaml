@@ -1,7 +1,7 @@
 api_key: api_key_placeholder
 api_secret: api_secret_placeholder
 
-ws_url: wss://livekit.svca.local
+ws_url:
 redis:
   address: 127.0.0.1:6379
 

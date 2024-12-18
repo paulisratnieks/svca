@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Commands;
 
 use Agence104\LiveKit\RoomServiceClient;
 use App\Models\Meeting;
