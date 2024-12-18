@@ -20,7 +20,7 @@ class CreateSuperUser extends Command
      */
     protected $description = 'Create super user';
 
-    public function handle(): void
+    public function handle(): int
     {
         $this->info('Creating super user');
         $isValidInput = false;
@@ -28,14 +28,14 @@ class CreateSuperUser extends Command
         $password = '';
 
         while (!$isValidInput) {
-            $email = $this->ask('Email');
-            $password = $this->ask('Password');
+            $email = stringify($this->ask('Email'));
+            $password = stringify($this->ask('Password'));
 
             try {
                 $this->validateInput($email, $password);
                 $isValidInput = true;
             } catch (ValidationException $exception) {
-                collect($exception->errors())->flatten()->each(fn (string $error) => $this->error($error));
+                collect($exception->errors())->flatten()->each(fn(mixed $error) => $this->error(stringify($error)));
                 $this->info('Please enter valid information');
             }
         }
@@ -43,9 +43,14 @@ class CreateSuperUser extends Command
         User::factory()
             ->superUser()
             ->create([
+                'name' => 'Super User',
                 'email' => $email,
                 'password' => Hash::make($password),
             ]);
+
+        $this->info('Super has been created');
+
+        return 0;
     }
 
     /**

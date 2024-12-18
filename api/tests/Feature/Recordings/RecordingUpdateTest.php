@@ -1,6 +1,6 @@
 <?php
 
-namespace Recordings;
+namespace Tests\Feature\Recordings;
 
 use App\Models\Recording;
 use App\Models\User;
