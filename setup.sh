@@ -4,6 +4,7 @@ cp ./api/.env.example ./api/.env
 cp ./web/.env.example ./web/.env
 cp ./docker/livekit/livekit.example.yaml ./docker/livekit/livekit.yaml
 cp ./docker/livekit/egress.example.yaml ./docker/livekit/egress.yaml
+chown 33:33 ./api/.env
 
 docker compose up livekit redis -d
 docker exec -it $(docker ps -a --filter "ancestor=livekit/livekit-server:v1.8.0" --format "{{.ID}}") sh -c './livekit-server generate-keys' > keys.tmp
@@ -35,11 +36,11 @@ sed -i "s/value_placeholder/${api_secret}/" ./docker/livekit/livekit.yaml
 
 docker compose --env-file ./api/.env up php mysql -d
 
-container_id = ''
+container_id=''
 while [ -z "$container_id" ]; do
   container_id=$(sudo docker ps -a -f ancestor=svca-php -f health=healthy --format "{{.ID}}")
   if [ -z "$container_id" ]; then
-    echo "Waiting for mysql container to fully initialize"
+    echo "Waiting for php container to fully initialize"
     sleep 2
   fi
 done
