@@ -28,6 +28,7 @@ sed -i "s/^VITE_LIVEKIT_API_URL=.*/VITE_LIVEKIT_API_URL=wss:\/\/livekit.${domain
 
 sed -i "s/^api_key:.*/api_key: ${api_key}/" ./docker/livekit/egress.yaml
 sed -i "s/^api_secret:.*/api_secret: ${api_secret}/" ./docker/livekit/egress.yaml
+sed -i "s/^ws_url:.*/ws_url: wss:\/\/livekit.${domain}/" ./docker/livekit/egress.yaml
 
 sed -i "s/key_placeholder/${api_key}/" ./docker/livekit/livekit.yaml
 sed -i "s/value_placeholder/${api_secret}/" ./docker/livekit/livekit.yaml
