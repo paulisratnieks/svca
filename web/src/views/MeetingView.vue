@@ -69,9 +69,10 @@ const localParticipant: LocalUserWithTracks = reactive({user: auth.user!});
 const remoteParticipants: Map<string, UserWithTracks> = reactive(new Map());
 
 const participantsWithTracks: ComputedRef<UserWithTracks[]> = computed(() => {
-	return [...remoteParticipants.values()]
-		.concat(localParticipant)
-		.filter(participant => participant.user);
+	const participants = [...remoteParticipants.values()]
+	participants.unshift(localParticipant)
+
+	return participants.filter(participant => participant.user);
 });
 
 async function mediaToken(): Promise<string> {

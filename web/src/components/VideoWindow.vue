@@ -68,11 +68,11 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-	if (props.audioTrack) {
-		props.audioTrack.detach();
+	if (props.audioTrack && video.value) {
+		props.audioTrack.detach(video.value);
 	}
-	if (props.videoTrack) {
-		props.videoTrack.detach();
+	if (props.videoTrack && video.value) {
+		props.videoTrack.detach(video.value);
 	}
 })
 </script>
