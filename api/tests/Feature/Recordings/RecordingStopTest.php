@@ -56,7 +56,7 @@ class RecordingStopTest extends TestCase
             ->create();
 
         $this->actingAs($user)
-            ->patch('recordings/' . $recording->id)
+            ->patch('recordings/' . $recording->id . '/stop')
             ->assertNotFound();
     }
 
@@ -68,7 +68,7 @@ class RecordingStopTest extends TestCase
             ->create();
 
         $this->actingAs($user)
-            ->patch('recordings/' . $recording->id)
+            ->patch('recordings/' . $recording->id . '/stop')
             ->assertNotFound();
     }
 }

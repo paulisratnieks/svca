@@ -72,25 +72,9 @@ class Recording extends Model
     /**
      * @param Builder<self> $query
      */
-    public function scopeActive(Builder $query): void
-    {
-        $query->where('active', true);
-    }
-
-    /**
-     * @param Builder<self> $query
-     */
     public function scopeInactive(Builder $query): void
     {
         $query->where('active', false);
-    }
-
-    /**
-     * @param Builder<self> $query
-     */
-    public function scopeOwnedByMe(Builder $query): void
-    {
-        $query->where('user_id', auth()->id());
     }
 
     /**
