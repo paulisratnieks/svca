@@ -87,7 +87,7 @@ function onLoginButtonClick(): void {
 						:label="'Log in'"
 						@click="onLoginButtonClick">
 					</Button>
-					<div class="sign-up">Don't have an acoount?
+					<div class="sign-up">Don't have an account?
 						<Button variant="link" label="Sign Up" @click="onSignUpButtonClick"></Button>
 					</div>
 				</div>

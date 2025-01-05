@@ -16,7 +16,7 @@ class CleanupMeetingsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_when_cleanup_called_then_inactive_meetings(): void
+    public function test_when_cleanup_called_then_inactive_meetings_get_soft_deleted_and_active_recordings_get_stopped(): void
     {
         User::factory()->create();
         [$activeMeeting, $activeMeetingRecording] = $this->meetingWithActiveRecording();

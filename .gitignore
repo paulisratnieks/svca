@@ -1,4 +1,5 @@
 /.idea
+!/docker/web/certs/.gitkeep
 /docker/web/certs/*
 /docker/web/default.conf
 /docker/livekit/livekit.yaml

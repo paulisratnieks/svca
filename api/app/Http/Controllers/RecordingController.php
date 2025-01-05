@@ -86,15 +86,6 @@ class RecordingController extends Controller
         ], ResponseAlias::HTTP_CREATED);
     }
 
-    public function update(Recording $recording, Authenticatable $user): Response
-    {
-        abort_if($user->cannot('update', $recording), ResponseAlias::HTTP_NOT_FOUND);
-
-        $recording->touch();
-
-        return response()->noContent();
-    }
-
     /**
      * @throws Throwable
      */

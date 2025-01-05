@@ -16,7 +16,7 @@ class AuthenticationController extends Controller
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
-            'password' => ['required'],
+            'password' => ['required', 'string'],
         ]);
 
         if (Auth::attempt($credentials)) {
@@ -34,11 +34,13 @@ class AuthenticationController extends Controller
 
     public function register(RegisterRequest $request): JsonResponse
     {
-        User::create([
+        $user = User::create([
             'email' => $request->validated('email'),
             'password' => Hash::make(stringify($request->validated('password'))),
             'name' => $request->validated('name'),
         ]);
+        assert($user instanceof User);
+        Auth::login($user);
 
         return response()->json(status: Response::HTTP_CREATED);
     }

@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type {User} from '@/types/user';
-import type {Track} from 'livekit-client';
+import {Track} from 'livekit-client';
 import {computed, onMounted, onUnmounted, type Ref, useTemplateRef, watch} from 'vue';
 import ParticipantLogo from '@/components/ParticipantLogo.vue';
 import ParticipantLabel from '@/components/ParticipantLabel.vue';
+import {useAuth} from '@/stores/auth';
+
+const auth = useAuth();
 
 const video: Ref<HTMLVideoElement | null> = useTemplateRef('video');
 
@@ -36,9 +39,14 @@ watch(
 	trackAvailableHandler(),
 )
 
+function shouldAttachTrack(track: Track|undefined): boolean {
+	return track !== undefined
+		&& !(track?.kind === Track.Kind.Audio && props.user.id === auth.user!.id);
+}
+
 function trackAvailableHandler(): (newValue: Track | undefined, oldValue: Track | undefined) => void {
 	return (newValue: Track | undefined, oldValue: Track | undefined) => {
-		if (newValue !== undefined && oldValue === undefined && video.value) {
+		if (newValue !== undefined && oldValue === undefined && video.value && shouldAttachTrack(newValue)) {
 			attachTrackToVideo(newValue);
 		}
 	}
@@ -51,22 +59,20 @@ function attachTrackToVideo(track: Track): void {
 }
 
 onMounted(() => {
-	if (props.audioTrack) {
-		attachTrackToVideo(props.audioTrack)
+	if (shouldAttachTrack(props.audioTrack)) {
+		attachTrackToVideo(props.audioTrack!)
 	}
-	if (props.videoTrack) {
-		attachTrackToVideo(props.videoTrack)
+	if (shouldAttachTrack(props.videoTrack)) {
+		attachTrackToVideo(props.videoTrack!)
 	}
 });
 
 onUnmounted(() => {
-	if (props.audioTrack) {
-		props.audioTrack.detach();
-		props.audioTrack.stop();
+	if (props.audioTrack && video.value) {
+		props.audioTrack.detach(video.value);
 	}
-	if (props.videoTrack) {
-		props.videoTrack.detach();
-		props.videoTrack.stop();
+	if (props.videoTrack && video.value) {
+		props.videoTrack.detach(video.value);
 	}
 })
 </script>

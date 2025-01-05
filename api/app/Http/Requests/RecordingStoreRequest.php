@@ -12,7 +12,7 @@ class RecordingStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'room_name' => ['required', 'uuid'],
+            'room_name' => ['required', 'uuid', 'exists:meetings,id'],
         ];
     }
 }

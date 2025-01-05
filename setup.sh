@@ -4,6 +4,10 @@ cp ./api/.env.example ./api/.env
 cp ./web/.env.example ./web/.env
 cp ./docker/livekit/livekit.example.yaml ./docker/livekit/livekit.yaml
 cp ./docker/livekit/egress.example.yaml ./docker/livekit/egress.yaml
+cp ./docker/web/default.example.conf ./docker/web/default.conf
+
+chown 33:33 ./api/.env
+chmod a+w ./api/storage/app/private/recordings
 
 docker compose up livekit redis -d
 docker exec -it $(docker ps -a --filter "ancestor=livekit/livekit-server:v1.8.0" --format "{{.ID}}") sh -c './livekit-server generate-keys' > keys.tmp
@@ -33,20 +37,21 @@ sed -i "s/^ws_url:.*/ws_url: wss:\/\/livekit.${domain}/" ./docker/livekit/egress
 sed -i "s/key_placeholder/${api_key}/" ./docker/livekit/livekit.yaml
 sed -i "s/value_placeholder/${api_secret}/" ./docker/livekit/livekit.yaml
 
+sed -i "s/domain_placeholder/${domain}/g" ./docker/web/default.conf
+
 docker compose --env-file ./api/.env up php mysql -d
 
-container_id = ''
+container_id=''
 while [ -z "$container_id" ]; do
   container_id=$(sudo docker ps -a -f ancestor=svca-php -f health=healthy --format "{{.ID}}")
   if [ -z "$container_id" ]; then
-    echo "Waiting for mysql container to fully initialize"
+    echo "Waiting for php container to fully initialize"
     sleep 2
   fi
 done
 
 docker exec -it "$container_id" sh -c 'php artisan key:generate; php artisan migrate --force; php artisan make:super-user'
 
-cp ./docker/web/default.example.conf ./docker/web/default.conf
-sed -i "s/domain_placeholder/${domain}/g" ./docker/web/default.conf
+docker compose down
 
 echo "Setup complete"

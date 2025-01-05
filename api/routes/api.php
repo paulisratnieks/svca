@@ -13,7 +13,7 @@ Route::middleware(['auth:sanctum', 'auth:web'])->group(function (): void {
     Route::get('user', fn(Request $request): ?User => $request->user());
     Route::get('logout', [AuthenticationController::class, 'logout']);
     Route::resource('meetings', MeetingController::class)->only('store', 'show');
-    Route::resource('recordings', RecordingController::class)->only('index', 'show', 'store', 'update');
+    Route::resource('recordings', RecordingController::class)->only('index', 'show', 'store');
     Route::delete('recordings', [RecordingController::class, 'destroy']);
     Route::patch('recordings/{recording}/stop', [RecordingController::class, 'stop']);
     Route::get('recordings/{recording}/download', [RecordingController::class, 'download']);
