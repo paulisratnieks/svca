@@ -7,7 +7,7 @@ cp ./docker/livekit/egress.example.yaml ./docker/livekit/egress.yaml
 cp ./docker/web/default.example.conf ./docker/web/default.conf
 
 chown 33:33 ./api/.env
-chmod o=wxt ./api/storage/app/private/recordings
+chmod a+w ./api/storage/app/private/recordings
 
 docker compose up livekit redis -d
 docker exec -it $(docker ps -a --filter "ancestor=livekit/livekit-server:v1.8.0" --format "{{.ID}}") sh -c './livekit-server generate-keys' > keys.tmp
