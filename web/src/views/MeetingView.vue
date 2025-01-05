@@ -432,6 +432,8 @@ onMounted(async (): Promise<void> => {
 
 onUnmounted(() => {
 	room.disconnect();
+	localParticipant.audioTrack?.stop();
+	localParticipant.videoTrack?.stop();
 });
 </script>
 

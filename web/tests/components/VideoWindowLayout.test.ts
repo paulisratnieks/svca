@@ -1,7 +1,8 @@
 import {expect, describe, it, vi } from 'vitest';
-import {config, mount} from '@vue/test-utils';
+import {config, mount, VueWrapper} from '@vue/test-utils';
 import VideoWindowLayout from '@/components/VideoWindowLayout.vue';
 import {defaultOptions} from 'primevue';
+import {createTestingPinia} from '@pinia/testing';
 
 config.global.mocks['$primevue'] = {
 	config: defaultOptions
@@ -19,15 +20,30 @@ const MockTrack = vi.fn(function (type) {
 });
 MockTrack.prototype.attach = vi.fn();
 
+function render(props: Record<string, unknown>): VueWrapper<VideoWindowLayout> {
+	const wrapper = mount(VideoWindowLayout,
+		{
+			props: {
+				...props,
+				'onUpdate:modelValue': (e) => wrapper.setProps({modelValue: e}),
+			},
+			global: {
+				plugins: [createTestingPinia({
+					createSpy: vi.fn,
+					initialState: {'auth': {id: 1, name: 'user'}}
+				})]
+			}
+		}
+	);
+
+	return wrapper;
+}
+
 describe('VideoWindowLayout', () => {
 	it('video window renders grid layout when no participant is screen sharing', () => {
-		const wrapper = mount(VideoWindowLayout,
-			{
-				props: {
-					participants: [{user: {id: 1, name: 'name'}}]
-				},
-			}
-		);
+		const wrapper = render({
+			participants: [{user: {id: 1, name: 'name'}}]
+		});
 
 		expect(wrapper.find('.videos').classes()).contains('grid');
 	});
@@ -38,13 +54,9 @@ describe('VideoWindowLayout', () => {
 		const mockAudioTrack = new MockTrack('audio');
 		const mockVideoTrack = new MockTrack('video');
 		const participantWithoutTracks = {user: {id: 1, name: 'name'}};
-		const wrapper = mount(VideoWindowLayout,
-			{
-				props: {
+		const wrapper = render({
 					participants: [participantWithoutTracks]
-				},
-			}
-		);
+		});
 		await wrapper.setProps({
 			participants: [
 				{
@@ -71,13 +83,9 @@ describe('VideoWindowLayout', () => {
 			return {user: {id: i, name: 'user'}};
 		});
 
-		const wrapper = mount(VideoWindowLayout,
-			{
-				props: {
-					participants: participants
-				},
-			}
-		);
+		const wrapper = render({
+			participants: participants
+		});
 		expect(wrapper.findAllComponents({name: 'VideoWindow'}).length).toEqual(maxVideoWindowCountGridLayout);
 		expect(wrapper.findComponent({name: 'Paginator'}).exists).toBeTruthy();
 	});

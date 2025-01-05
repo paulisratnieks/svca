@@ -76,7 +76,6 @@ describe('MeetingSidebar', () => {
 		expect(wrapper.find('.participant-block span:not(.media)').text()).toEqual(authenticatedUser.name);
 		expect(wrapper.findComponent({name: 'MicrophoneIcon'}).props('isOff')).toEqual(false);
 		expect(wrapper.findComponent({name: 'CameraIcon'}).props('isOff')).toEqual(false);
-		expect(wrapper.findComponent({name: 'CameraIcon'}).props('isOff')).toEqual(false);
 	});
 
 	it('can search participants', async () => {
