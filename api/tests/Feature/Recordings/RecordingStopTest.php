@@ -3,17 +3,10 @@
 namespace Tests\Feature\Recordings;
 
 use Agence104\LiveKit\EgressServiceClient;
-use App\Models\Meeting;
 use App\Models\Recording;
 use App\Models\User;
-use Database\Seeders\UserWithInactiveRecordingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
-use Livekit\EgressInfo;
-use Livekit\FileInfo;
 use Mockery\MockInterface;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
 class RecordingStopTest extends TestCase
@@ -26,7 +19,7 @@ class RecordingStopTest extends TestCase
         $user = User::factory()
             ->create();
         $recording = Recording::factory()
-            ->state(['egress_id' => $egressId,])
+            ->state(['egress_id' => $egressId])
             ->for($user)
             ->active()
             ->create();
