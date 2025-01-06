@@ -270,6 +270,7 @@ function handleRecordingStatusChanged(recordingStatus: boolean): void {
 	} else if (!recordingStatus && isRecording.value) {
 		toast.add({ severity: 'info', summary: 'Meeting page', detail: 'Recording has stopped', life: 3000 });
 	}
+	isRecording.value = recordingStatus;
 }
 
 
