@@ -70,9 +70,11 @@ onMounted(() => {
 onUnmounted(() => {
 	if (props.audioTrack && video.value) {
 		props.audioTrack.detach(video.value);
+		props.audioTrack.stop();
 	}
 	if (props.videoTrack && video.value) {
 		props.videoTrack.detach(video.value);
+		props.videoTrack.stop();
 	}
 })
 </script>
