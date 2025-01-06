@@ -56,13 +56,11 @@ const messages: Ref<Message[]> = ref([]);
 const selectedTabId: Ref<TabNames> = ref(TabNames.Chat);
 const isSidebarVisible: Ref<boolean> = ref(false);
 const loading: Ref<boolean> = ref(true);
+const recordButtonLoading: Ref<boolean> = ref(false);
+const isRecording: Ref<boolean> = ref(false);
 
 const meetingId: Ref<string> = computed((): string => {
 	return route.params.meetingId as string;
-});
-
-const isRecording: Ref<boolean> = computed((): boolean => {
-	return recordings.statuses[meetingId.value];
 });
 
 const localParticipant: LocalUserWithTracks = reactive({user: auth.user!});
@@ -112,8 +110,9 @@ function setupCurrentRoomState(): void {
 		});
 	});
 
-	if (room.isRecording) {
-		handleRecordingStatusChanged(room.isRecording)
+	isRecording.value = room.isRecording;
+	if (isRecording.value) {
+		handleRecordingStatusChanged(isRecording.value)
 	}
 }
 
@@ -266,12 +265,12 @@ function handleTrackUnMuted(publication: TrackPublication, participant: Particip
 }
 
 function handleRecordingStatusChanged(recordingStatus: boolean): void {
-	if (recordingStatus) {
+	if (recordingStatus && !isRecording.value) {
 		toast.add({ severity: 'info', summary: 'Meeting page', detail: 'Recording has started', life: 3000 });
-	} else {
+	} else if (!recordingStatus && isRecording.value) {
 		toast.add({ severity: 'info', summary: 'Meeting page', detail: 'Recording has stopped', life: 3000 });
 	}
-	recordings.statuses[meetingId.value] = recordingStatus;
+	isRecording.value = recordingStatus;
 }
 
 
@@ -361,22 +360,34 @@ async function onRecordControlClick(): Promise<void> {
 	if (isRecording.value) {
 		const recordingIds = recordings.ids;
 		const recordingId = recordingIds[meetingId.value];
+		recordButtonLoading.value = true;
 		try {
 			await useAxios().patch(`recordings/${recordingId}/stop` , {
 				room_name: meetingId.value
 			});
+			handleRecordingStatusChanged(false);
 			delete recordingIds[meetingId.value];
+			isRecording.value = false;
 		} catch (error: unknown) {
 			if (axios.isAxiosError(error) && error.status === HttpStatusCode.NotFound) {
 				toast.add({ severity: 'error', summary: 'Meeting page', detail: 'You are not authorized to cancel the recordings. Only the recording author can stop it', life: 3000 });
 			}
+		} finally {
+			recordButtonLoading.value = false;
 		}
 	} else {
-		const recordingId = (await useAxios().post('recordings', {
-			room_name: meetingId.value
-		})).data.id;
-		const recordingIds = recordings.ids;
-		recordingIds[meetingId.value] = recordingId;
+		recordButtonLoading.value = true;
+		try {
+			const recordingId = (await useAxios().post('recordings', {
+				room_name: meetingId.value
+			})).data.id;
+			const recordingIds = recordings.ids;
+			recordingIds[meetingId.value] = recordingId;
+			handleRecordingStatusChanged(true);
+			isRecording.value = true;
+		} finally {
+			recordButtonLoading.value = false;
+		}
 	}
 }
 
@@ -432,6 +443,7 @@ onMounted(async (): Promise<void> => {
 
 onUnmounted(() => {
 	room.disconnect();
+	localParticipant.user.isSpeaking = false;
 });
 </script>
 
@@ -476,7 +488,7 @@ onUnmounted(() => {
 				<Button @click="onScreenShareControlClick" icon="pi pi-desktop" severity="secondary" rounded aria-label="Filter">
 					<template #icon><ScreenShareIcon :is-off="localParticipant.screenVideoTrack === undefined"></ScreenShareIcon></template>
 				</Button>
-				<Button @click="onRecordControlClick" icon="pi pi-video" severity="secondary" rounded aria-label="Filter">
+				<Button @click="onRecordControlClick" :loading="recordButtonLoading" icon="pi pi-video" severity="secondary" rounded aria-label="Filter">
 					<template #icon><RecordIcon :is-off="!isRecording"></RecordIcon></template>
 				</Button>
 			</template>

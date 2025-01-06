@@ -1,6 +1,6 @@
 /.idea
-!/docker/web/certs/.gitkeep
 /docker/web/certs/*
+!/docker/web/certs/.gitkeep
 /docker/web/default.conf
 /docker/livekit/livekit.yaml
 /docker/livekit/egress.yaml

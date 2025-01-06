@@ -166,7 +166,7 @@ onUnmounted(() => {
 					:audio-track="screenSharingParticipant.screenAudioTrack"
 					:audio-track-muted="screenSharingParticipant.audioTrackMuted"
 					:video-track="screenSharingParticipant.screenVideoTrack"
-					:video-track-muted="screenSharingParticipant.videoTrackMuted"
+					:video-track-muted="false"
 					:user="screenSharingParticipant.user"
 				/>
 				<div>
