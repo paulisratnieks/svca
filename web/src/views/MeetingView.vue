@@ -443,6 +443,7 @@ onMounted(async (): Promise<void> => {
 
 onUnmounted(() => {
 	room.disconnect();
+	localParticipant.user.isSpeaking = false;
 });
 </script>
 
