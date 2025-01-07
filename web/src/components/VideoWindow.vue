@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type {User} from '@/types/user';
 import {Track} from 'livekit-client';
-import {computed, onMounted, onUnmounted, type Ref, useTemplateRef, watch} from 'vue';
+import {computed, onBeforeUnmount, onMounted, type Ref, useTemplateRef, watch} from 'vue';
 import ParticipantLogo from '@/components/ParticipantLogo.vue';
 import ParticipantLabel from '@/components/ParticipantLabel.vue';
 import {useAuth} from '@/stores/auth';
@@ -67,20 +67,14 @@ onMounted(() => {
 	}
 });
 
-onUnmounted(() => {
-	if (props.audioTrack) {
-		if (video.value) {
-			props.audioTrack.detach(video.value);
-		}
-		props.audioTrack.stop();
+onBeforeUnmount(() => {
+	if (props.audioTrack && video.value) {
+		props.audioTrack.detach(video.value);
 	}
-	if (props.videoTrack) {
-		if (video.value) {
-			props.videoTrack.detach(video.value);
-		}
-		props.videoTrack.stop();
+	if (props.videoTrack && video.value) {
+		props.videoTrack.detach(video.value);
 	}
-})
+});
 </script>
 
 <template>

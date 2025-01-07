@@ -64,7 +64,7 @@ function redirectToMeeting(id: string): void {
 					<div class="card-content">
 						<div class="form-field">
 							<FloatLabel variant="on">
-								<InputText id="meeting-id" v-model="meetingId"></InputText>
+								<InputText id="meeting-id" v-model="meetingId" @keydown.enter="onJoinMeetingButtonClick"></InputText>
 								<label for="meeting-id">Meeting ID</label>
 							</FloatLabel>
 							<small v-if="showMeetingIdError">A meeting with the provided ID does not exist</small>

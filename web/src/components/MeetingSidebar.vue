@@ -181,8 +181,8 @@ watch(
 							>
 								<span>{{ participant.user.name }}</span>
 								<span class="media">
-									<MicrophoneIcon :is-off="participant.audioTrackMuted ?? false"></MicrophoneIcon>
-									<CameraIcon :is-off="participant.videoTrackMuted ?? false"></CameraIcon>
+									<MicrophoneIcon :is-off="participant.audioTrackMuted ?? participant.audioTrack?.isMuted ?? true"></MicrophoneIcon>
+									<CameraIcon :is-off="participant.videoTrackMuted ?? participant.videoTrack?.isMuted ?? true"></CameraIcon>
 								</span>
 							</div>
 						</div>
