@@ -70,14 +70,14 @@ function onLoginButtonClick(): void {
 				<div class="card-content">
 					<div class="form-field">
 						<FloatLabel variant="on">
-							<InputText id="email" v-model="form.email.value" type="email"></InputText>
+							<InputText id="email" v-model="form.email.value" @keydown.enter="onLoginButtonClick" type="email"></InputText>
 							<label for="email">Email</label>
 						</FloatLabel>
 						<small v-if="form.email.error">{{ form.email.error }}</small>
 					</div>
 					<div class="form-field">
 						<FloatLabel variant="on">
-							<InputText id="password" v-model="form.password.value" type="password"></InputText>
+							<InputText id="password" v-model="form.password.value" @keydown.enter="onLoginButtonClick" type="password"></InputText>
 							<label for="password">Password</label>
 						</FloatLabel>
 						<small v-if="form.password.error">{{ form.password.error }}</small>

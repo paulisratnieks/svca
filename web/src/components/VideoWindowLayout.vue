@@ -27,12 +27,8 @@ const maxVideoCountPerPage: Ref<number> = computed(() => {
 	return videoLayout.value === VideoLayoutType.Grid ? 9 : 5;
 });
 
-const videosCount: Ref<number> = computed(() => {
-	return props.participants.length + 1;
-});
-
 const isPaginatorVisible: Ref<boolean> = computed(() => {
-	return videosCount.value > maxVideoCountPerPage.value;
+	return props.participants.length > maxVideoCountPerPage.value;
 });
 
 const screenVideoTracks: Ref<(Track|undefined)[]> = computed(() => {
@@ -164,7 +160,7 @@ onUnmounted(() => {
 					:size="sizeInPixels"
 					:is-size-width="isSizeWidth"
 					:audio-track="screenSharingParticipant.screenAudioTrack"
-					:audio-track-muted="screenSharingParticipant.audioTrackMuted"
+					:audio-track-muted="screenSharingParticipant.audioTrackMuted ?? screenSharingParticipant.audioTrack?.isMuted"
 					:video-track="screenSharingParticipant.screenVideoTrack"
 					:video-track-muted="false"
 					:user="screenSharingParticipant.user"
@@ -189,7 +185,7 @@ onUnmounted(() => {
 				class="paginator"
 				v-model:first="firstRecordCountInPage"
 				:rows="maxVideoCountPerPage"
-				:totalRecords="videosCount"
+				:totalRecords="participants.length"
 				template="PrevPageLink CurrentPageReport NextPageLink"
 				currentPageReportTemplate="{currentPage} of {totalPages}"
 			/>

@@ -2,7 +2,7 @@
 import ToggleSwitch from 'primevue/toggleswitch';
 import Panel from 'primevue/panel';
 import Button from 'primevue/button';
-import {computed, nextTick, onMounted, ref, type Ref} from 'vue';
+import {computed, nextTick, onBeforeUnmount, onMounted, ref, type Ref} from 'vue';
 import {createLocalAudioTrack, createLocalTracks, createLocalVideoTrack, LocalTrack, Track} from 'livekit-client';
 import router from '@/router';
 import {useAuth} from '@/stores/auth';
@@ -75,6 +75,10 @@ onMounted(() => {
 				tracks.value = enabledTracks;
 			});
 	}
+});
+
+onBeforeUnmount(() => {
+	tracks.value.forEach(track => track.stop())
 });
 
 </script>
